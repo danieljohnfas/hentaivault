@@ -1,30 +1,31 @@
 # 🤖 HentaiVault SEO Auto-Monitor Report
-_Last run: 2026-10-10 21:26:09 UTC • Live mode_
+_Last run: 2026-10-11 05:13:31 UTC • Live mode_
 
 ---
 
 ## 📊 GSC Snapshot (Last 7 Days)
 | Metric | Value |
 |---|---|
-| Total Clicks | **1** |
-| Total Impressions | **11** |
-| Average CTR | **9.09%** |
-| Average Position | **2.5** |
+| Total Clicks | **8** |
+| Total Impressions | **22** |
+| Average CTR | **36.36%** |
+| Average Position | **36.3** |
 
 ## 📅 Week-over-Week Trend
 | Metric | This Week | Last Week | Change |
 |---|---|---|---|
-| Clicks | 1 | 17 | 📉 -16 |
-| Impressions | 11 | 60 | 📉 -49 |
+| Clicks | 8 | 16 | 📉 -8 |
+| Impressions | 22 | 61 | 📉 -39 |
 
 ## 🔍 Top 10 Queries by Clicks
 | Query | Clicks | Impressions | CTR | Position |
 |---|---|---|---|---|
-| `hentaivault` | 1 | 11 | 9.09% | 2.5 |
+| `hentaivault` | 8 | 21 | 38.10% | 2.6 |
+| `hentaivteca` | 0 | 1 | 0.00% | 70.0 |
 
 ## ⚠️ Issues Detected
-- 🔴 Clicks dropped 94.1% vs last week (17 → 1)
-- 🔴 Impressions dropped 81.7% vs last week (60 → 11)
+- 🔴 Clicks dropped 50.0% vs last week (16 → 8)
+- 🔴 Impressions dropped 63.9% vs last week (61 → 22)
 
 ## 🔧 Fixes Applied This Run
 _No automatic fixes needed this run._
@@ -35,7 +36,7 @@ _No non-branded queries detected in GSC data yet. Growth expected as blog posts 
 ## 🏥 Traffic Health
 | Signal | Value |
 |---|---|
-| Branded Clicks | 1 (100.0%) |
+| Branded Clicks | 8 (100.0%) |
 | Non-Branded Clicks | 0 (0.0%) |
 | Organic Diversity Score | 0 active non-branded opportunities |
 
