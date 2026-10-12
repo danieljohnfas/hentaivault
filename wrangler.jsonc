@@ -31,5 +31,9 @@
     "crons": [
       "0 */12 * * *"
     ]
+  },
+  // Workers AI (Clef) screens submissions and reviews; Jev fallback uses the TYPESAFE_API_KEY secret.
+  "ai": {
+    "binding": "AI"
   }
 }

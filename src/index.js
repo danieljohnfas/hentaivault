@@ -11,6 +11,8 @@
  *   TURNSTILE_SECRET_KEY — optional; when set, /api/submit and reviews verify
  *                          Cloudflare Turnstile tokens (see verifyHuman)
  *   INDEXNOW_KEY         — optional, enables IndexNow pings for new listings
+ *   TYPESAFE_API_KEY     — optional Jev fallback for submission/review screening;
+ *                          Clef runs through the AI binding (wrangler.jsonc)
  */
 
 import { isMinorSafe, isListingVisible, PROHIBITED_TERMS } from './prohibited.js';
@@ -23,6 +25,25 @@ import {
   LINK_COLUMNS, HUB_PAGES, HUB_LINKS, topForHub, renderHubCards, renderHomeSection,
   buildNameIndex, renderGuideLinks,
 } from './internal-links.js';
+import { decide, noul, choice } from './decision.js';
+
+// Clef/Jev screening (see decision.js). Thresholds were calibrated on live samples:
+// real directory sites scored relevance 0.94-0.97, a loans page 0.04; a loli image board
+// scored minor_risk 0.95-0.97 while a mainstream doujin library scored up to 0.64.
+const SUBMISSION_QUESTIONS = {
+  relevant: noul('A website submitted to an adult anime/hentai site directory. Is it actually an adult anime, hentai, manga, doujin, eroge or related creator site (not an unrelated business, malware, or a generic spam page)?'),
+  minor_risk: noul('Does this submission suggest sexual content involving minors (e.g. loli, shota, child, underage, "young-looking" emphasis)?'),
+};
+const MIN_RELEVANCE = 0.3;
+const MAX_MINOR_RISK = 0.85;
+
+const REVIEW_QUESTIONS = {
+  verdict: choice('A user review of a website, posted publicly on a site directory. Classify it.', {
+    ok: 'A genuine opinion or experience, positive or negative, mild profanity allowed',
+    spam: 'Advertising, scams, promotion of another site or service, or junk text',
+    harmful: 'Threats, personal data about someone, hate against a protected group, or sexual content involving minors',
+  }),
+};
 
 const SUPPORTED_LANGS = ['en', 'fr', 'es', 'jp', 'pt', 'hi', 'ar', 'de'];
 
@@ -1058,6 +1079,11 @@ async function handleRequest(request, env, ctx) {
 
           const human = await verifyHuman(body, ip, env);
           if (!human.ok) return jsonError(human.error, 400);
+
+          const reviewVerdict = await decide(env, { user_name: userName, comment, rating }, REVIEW_QUESTIONS);
+          if (reviewVerdict?.answers?.verdict?.choice && reviewVerdict.answers.verdict.choice !== 'ok') {
+            return jsonError('Review rejected.', 400);
+          }
 
           const siteExists = await env.hv_directory.prepare('SELECT 1 FROM sites WHERE id = ?').bind(site_id).first();
           if (!siteExists) return jsonError('Site not found', 404);
@@ -2105,6 +2131,22 @@ async function handleSubmit(request, env, ctx) {
       return jsonError('This site does not appear to be relevant to the HentaiVault directory (adult/anime/hentai content).', 422);
     }
 
+    // ── 3d. Clef/Jev screening ────────────────────────────────────────────────
+    const aiVerdict = await decide(
+      env,
+      { name: nameClean, url: urlClean, category: catClean, description: descClean },
+      SUBMISSION_QUESTIONS
+    );
+    if (aiVerdict?.answers) {
+      const rel = aiVerdict.answers.relevant?.noul;
+      const risk = aiVerdict.answers.minor_risk?.noul;
+      if (typeof rel === 'number' && rel < MIN_RELEVANCE) {
+        return jsonError('This site does not appear to be relevant to the HentaiVault directory.', 422);
+      }
+      if (typeof risk === 'number' && risk >= MAX_MINOR_RISK) {
+        return jsonError('This site cannot be listed on HentaiVault.', 422);
+      }
+    }
 
     // ── 4. Queue for review ──────────────────────────────────────────────────
     // Submissions are not published directly: the daily-add pipeline scores,
