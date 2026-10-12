@@ -54,3 +54,6 @@ cd
 
 # Merged memevault app (separate Express app, not part of hentaivault.me)
 memevault
+
+# Local-only archive
+_archive

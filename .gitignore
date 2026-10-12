@@ -49,3 +49,6 @@ bot/.env
 gsc-credentials.json
 fetch-gsc.js
 *.json.key
+
+# Local-only archive (never commit)
+_archive/
