@@ -51,3 +51,6 @@ sitemap.xml
 temp_review.html
 live.html
 cd
+
+# Merged memevault app (separate Express app, not part of hentaivault.me)
+memevault
