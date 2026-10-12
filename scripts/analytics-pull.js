@@ -275,7 +275,7 @@ async function pullGA4(auth) {
   } catch(e) {
     out(`⚠️  GA4 Admin: ${e.message}`);
     // Fallback: use known property ID
-    propertyId = 'properties/488828539'; // G-DL6XYN2LC7
+    propertyId = 'properties/488828539'; // G-VF4RKFXMFB
     out(`  Using fallback property: ${propertyId}`);
   }
 
