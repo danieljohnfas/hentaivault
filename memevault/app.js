@@ -8,19 +8,44 @@
 
 let POSTS_DATA = [];
 
-// ────────────────────────────────────────────────────
-// STATE & PERSISTENCE
-// ────────────────────────────────────────────────────
+// ── API HELPERS ──────────────────────────────────────
+async function apiFetch(url, options = {}) {
+    const token = state.user?.token;
+    const headers = {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...(options.headers || {})
+    };
+
+    // Only set JSON Content-Type if body is NOT FormData
+    if (options.body && !(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+    }
+
+    const res = await fetch(url, { ...options, headers });
+    if (res.status === 401 || res.status === 403) {
+        logout(); // Auto logout on expired token
+        throw new Error('Unauthenticated');
+    }
+    return res;
+}
+
+// ── STATE & PERSISTENCE ────────────────────────────────
 
 async function loadState() {
     let posts = [];
     const savedUser = localStorage.getItem('memevault_user');
-    const isLoggedIn = !!savedUser;
+    const user = savedUser ? JSON.parse(savedUser) : null;
+
+    // Set a temporary partial state so apiFetch can find the token if it exists
+    const tempUser = user;
 
     try {
-        const res = await fetch(`/api/posts?loggedIn=${isLoggedIn}&limit=6&offset=0`);
+        const token = tempUser?.token;
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch(`/api/posts?limit=1000&offset=0`, { headers });
+
         if (res.ok) {
-            posts = await res.json();
+            posts = (await res.json()).map(processPostMetadata);
         }
     } catch (e) {
         console.error('Failed to load posts from API', e);
@@ -31,41 +56,66 @@ async function loadState() {
         currentPost: null,
         activeCat: 'all',
         activeSort: 'hot',
-        user: savedUser ? JSON.parse(savedUser) : null,
-        hasMore: posts.length >= 6,
+        user: user,
+        hasMore: posts.length >= 1000,
+        chatMessages: [],
+        chatOpen: false,
     };
 }
 
 let state = {
     posts: [],
+    activePosts: [], // Track current filtered/sorted view for modal navigation
     currentPost: null,
     activeCat: 'all',
     activeSort: 'hot',
     user: null,
     hasMore: true,
+    chatMessages: [],
+    chatOpen: false,
 };
 
-// ... Wait to override state later in init().
+let videoObserver;
 
+function initVideoObserver() {
+    videoObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target;
+            if (entry.isIntersecting) {
+                video.play().catch(e => console.log('Autoplay blocked', e));
+            } else {
+                video.pause();
+            }
+        });
+    }, { threshold: 0.5 });
+}
 
 function saveState() {
-    localStorage.setItem('memevault_posts', JSON.stringify(state.posts));
     localStorage.setItem('memevault_user', JSON.stringify(state.user));
 }
 
-// Detect if we're running via the local Express server
-const SERVER_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-    ? '' // same origin – use relative paths
-    : null; // null means file:// – no server
-
-// ────────────────────────────────────────────────────
-// UTILITIES
-// ────────────────────────────────────────────────────
+// ── UTILITIES ───────────────────────────────────────
 
 function formatNum(n) {
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
     if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
     return n.toString();
+}
+
+function processPostMetadata(p) {
+    if (!p.authorEmoji) p.authorEmoji = '😎';
+    if (!p.authorColor) p.authorColor = 'linear-gradient(135deg,#7c3aed,#e91e63)';
+    return p;
+}
+
+function isVideo(url) {
+    if (!url) return false;
+    const cleanUrl = url.split('?')[0].toLowerCase();
+    const ext = cleanUrl.split('.').pop();
+    return ['mp4', 'webm', 'ogg', 'mov', 'gifv'].includes(ext) ||
+        url.includes('v.redd.it') ||
+        url.includes('fallback_url') ||
+        (url.includes('giphy.com') && (url.endsWith('.mp4') || url.includes('/looping/')));
 }
 
 function showToast(msg, type = '') {
@@ -121,6 +171,8 @@ function buildPostCard(post, idx) {
             ? 'color:var(--blue)'
             : '';
 
+    const mediaUrl = post.image.replace('.gifv', '.mp4');
+
     card.innerHTML = `
     <div class="post-header">
       <span class="post-category-badge">${post.category}</span>
@@ -133,7 +185,10 @@ function buildPostCard(post, idx) {
     </div>
     <h2 class="post-title">${post.title}</h2>
     <div class="post-media">
-      <img src="${post.image}" alt="${post.title}" loading="lazy" />
+      ${isVideo(mediaUrl)
+            ? `<video src="${mediaUrl}" autoplay muted loop playsinline></video>`
+            : `<img src="${mediaUrl}" alt="${post.title}" loading="lazy" />`
+        }
       <div class="post-media-overlay">
         <span class="overlay-text">Click to view & comment</span>
       </div>
@@ -179,6 +234,15 @@ function buildPostCard(post, idx) {
     // Save
     card.querySelector('.save-btn').addEventListener('click', (e) => { e.stopPropagation(); handleSave(post.id); });
 
+    if (isVideo(mediaUrl)) {
+        setTimeout(() => {
+            const video = card.querySelector('video');
+            if (video && videoObserver) {
+                videoObserver.observe(video);
+            }
+        }, 0);
+    }
+
     return card;
 }
 
@@ -196,39 +260,31 @@ async function handleVote(id, dir) {
     const post = state.posts.find(p => p.id === id);
     if (!post) return;
 
+    let newVote = dir;
+    let uiToast = dir === 'up' ? '🔥 Upvoted!' : '👎 Downvoted!';
+
     if (post.userVote === dir) {
         // undo vote
         post.upvotes += dir === 'up' ? -1 : 1;
-        post.userVote = null;
-
-        // Optimistic UI, but still call the API
-        const oppositeDir = dir === 'up' ? 'down' : 'up';
-        fetch(`/api/posts/${id}/upvote`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dir: oppositeDir })
-        });
-
+        newVote = null;
+        uiToast = 'Vote removed';
     } else {
         if (post.userVote) {
-            post.upvotes += post.userVote === 'up' ? -1 : 1;
-            // also undo the previous on backend...
-            const undir = post.userVote === 'up' ? 'down' : 'up';
-            fetch(`/api/posts/${id}/upvote`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dir: undir })
-            });
+            // changing vote direction
+            post.upvotes += dir === 'up' ? 2 : -2;
+        } else {
+            // adding new vote
+            post.upvotes += dir === 'up' ? 1 : -1;
         }
-        post.upvotes += dir === 'up' ? 1 : -1;
-        post.userVote = dir;
-
-        fetch(`/api/posts/${id}/upvote`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dir })
-        });
     }
+    
+    post.userVote = newVote;
+
+    // API call with explicit intended state
+    apiFetch(`/api/posts/${id}/upvote`, {
+        method: 'POST',
+        body: JSON.stringify({ dir: newVote })
+    }).catch(e => console.error('Vote failed', e));
 
     saveState();
     refreshFilteredFeed();
@@ -242,14 +298,16 @@ async function handleVote(id, dir) {
         dn.classList.toggle('active', post.userVote === 'down');
     }
 
-    showToast(dir === 'up' ? '🔥 Upvoted!' : '👎 Downvoted!', dir === 'up' ? 'success' : '');
+    if (newVote) {
+        showToast(uiToast, newVote === 'up' ? 'success' : '');
+    }
 }
 
 // ────────────────────────────────────────────────────
 // SAVE
 // ────────────────────────────────────────────────────
 
-function handleSave(id) {
+async function handleSave(id) {
     if (!state.user) {
         openOverlay('loginModal');
         showToast('⚠️ Please sign in to save posts.', 'error');
@@ -258,10 +316,31 @@ function handleSave(id) {
 
     const post = state.posts.find(p => p.id === id);
     if (!post) return;
+
+    // Optimistic UI toggle
     post.saved = !post.saved;
-    saveState();
     refreshFilteredFeed();
-    showToast(post.saved ? '🔖 Post saved!' : '🗑️ Removed from saved', post.saved ? 'success' : '');
+
+    try {
+        const res = await apiFetch(`/api/posts/${id}/save`, {
+            method: 'POST'
+        });
+        const data = await res.json();
+        if (res.ok) {
+            post.saved = data.saved; // Ensure sync with server
+            showToast(post.saved ? '🔖 Post saved!' : '🗑️ Removed from saved', post.saved ? 'success' : '');
+            refreshFilteredFeed();
+        } else {
+            // Revert on error
+            post.saved = !post.saved;
+            refreshFilteredFeed();
+            showToast('❌ Failed to save post.', 'error');
+        }
+    } catch (err) {
+        console.error('Save failed:', err);
+        post.saved = !post.saved;
+        refreshFilteredFeed();
+    }
 }
 
 // ────────────────────────────────────────────────────
@@ -278,34 +357,123 @@ function handleShare(post) {
 }
 
 // ────────────────────────────────────────────────────
+// REMIX
+// ────────────────────────────────────────────────────
+
+function handleRemix(post) {
+    const mediaUrl = post.image;
+    if (isVideo(mediaUrl)) {
+        showToast('⚠️ Cannot remix videos yet!', 'error');
+        return;
+    }
+    
+    if (!state.user) {
+        openOverlay('loginModal');
+        showToast('⚠️ Please sign in to remix memes.', 'error');
+        return;
+    }
+
+    closeOverlay('postModal');
+    openOverlay('memeGenModal');
+    
+    showToast('🔄 Loading image for remix...', 'success');
+    
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    
+    // Function to set up canvas once image loads
+    const setupCanvas = () => {
+        memeGenState.image = img;
+        memeGenState.topText = '';
+        memeGenState.bottomText = '';
+        const topInp = document.getElementById('memeTextTop');
+        const botInp = document.getElementById('memeTextBottom');
+        if (topInp) topInp.value = '';
+        if (botInp) botInp.value = '';
+        updateMemeCanvas();
+        showToast('✨ Ready to remix!', 'success');
+    };
+
+    img.onload = setupCanvas;
+    
+    img.onerror = () => {
+        // Fallback to proxy if direct CORS fails
+        img.onerror = () => showToast('❌ Failed to load image for remix', 'error');
+        img.src = `/api/ai/proxy?url=${encodeURIComponent(mediaUrl)}`;
+    };
+    
+    img.src = mediaUrl;
+}
+
+// ────────────────────────────────────────────────────
 // FILTER & SORT
 // ────────────────────────────────────────────────────
 
 function getFilteredPosts() {
     let posts = [...state.posts];
 
-    // Category filter (simple mapping)
-    if (state.activeCat !== 'all') {
+    // Category filter
+    if (state.activeCat === 'myposts') {
+        posts = posts.filter(p => p.author === state.user?.username);
+    } else if (state.activeCat === 'savedposts') {
+        posts = posts.filter(p => p.saved);
+    } else if (state.activeCat === 'foryou') {
+        // AI "For You" Feed logic: Sort by user preferences.
+        // Simple client-side personalization: boost posts matching categories the user saved or upvoted.
+        let prefs = {};
+        state.posts.forEach(p => {
+            if (p.saved || p.userVote === 'up') {
+                prefs[p.category] = (prefs[p.category] || 0) + 1;
+            }
+            if (p.userVote === 'down') {
+                prefs[p.category] = (prefs[p.category] || 0) - 1;
+            }
+        });
+        
+        // Add random jitter to weights to keep feed fresh, and factor in upvotes + comments
+        posts.forEach(p => {
+            const catWeight = prefs[p.category] || 0;
+            const popularity = (p.upvotes * 2) + p.comments;
+            const recency = p.id; // newer posts have slightly higher base id
+            p._foryouScore = (catWeight * 50) + popularity + (recency * 0.1) + (Math.random() * 20);
+        });
+        posts.sort((a, b) => b._foryouScore - a._foryouScore);
+    } else if (state.activeCat !== 'all') {
         const catMap = {
-            funny: 'Funny', gaming: 'Gaming', anime: 'Anime',
+            kiswahili: 'Kiswahili', funny: 'Funny', gaming: 'Gaming', anime: 'Anime',
             wholesome: 'Wholesome', animals: 'Animals', dark: 'Dark Humor',
             programming: 'Programming', relationship: 'Relationship', sports: 'Sports'
         };
         const catLabel = catMap[state.activeCat];
         if (catLabel) posts = posts.filter(p => p.category === catLabel);
+        else posts = posts.filter(p => p.category && p.category.toLowerCase() === state.activeCat.toLowerCase());
     }
 
-    // Sort
-    if (state.activeSort === 'hot') posts.sort((a, b) => b.upvotes - a.upvotes);
-    else if (state.activeSort === 'new') posts.sort((a, b) => b.id - a.id);
-
-    else if (state.activeSort === 'top') posts.sort((a, b) => (b.upvotes + b.comments) - (a.upvotes + a.comments));
+    // Sort (unless For You which provides its own sort)
+    if (state.activeCat !== 'foryou') {
+        if (state.activeSort === 'hot') posts.sort((a, b) => b.upvotes - a.upvotes);
+        else if (state.activeSort === 'new') posts.sort((a, b) => b.id - a.id);
+        else if (state.activeSort === 'top') posts.sort((a, b) => (b.upvotes + b.comments) - (a.upvotes + a.comments));
+    }
 
     return posts;
 }
 
 function refreshFilteredFeed() {
-    renderPosts(getFilteredPosts());
+    const list = getFilteredPosts();
+    state.activePosts = list;
+
+    // Update feed title based on active category
+    const titleEl = document.querySelector('.feed-title');
+    if (titleEl) {
+        if (state.activeCat === 'myposts') titleEl.textContent = '👤 My Posts';
+        else if (state.activeCat === 'savedposts') titleEl.textContent = '🔖 Saved Memes';
+        else if (state.activeCat === 'foryou') titleEl.textContent = '🧠 For You';
+        else if (state.activeCat === 'all') titleEl.textContent = '🔥 Hot Posts';
+        else titleEl.textContent = `📂 ${state.activeCat.charAt(0).toUpperCase() + state.activeCat.slice(1)}`;
+    }
+
+    renderPosts(list);
 }
 
 // ────────────────────────────────────────────────────
@@ -317,8 +485,20 @@ function openPost(id) {
     if (!post) return;
     state.currentPost = post;
 
-    document.getElementById('modalImg').src = post.image;
-    document.getElementById('modalImg').alt = post.title;
+    const mediaContainer = document.querySelector('.modal-left');
+    const mediaUrl = post.image.replace('.gifv', '.mp4');
+
+    mediaContainer.innerHTML = isVideo(mediaUrl)
+        ? `<video src="${mediaUrl}" controls autoplay loop playsinline class="modal-video"></video>`
+        : `<img src="${mediaUrl}" alt="${post.title}" class="modal-img" id="modalImg" />`;
+
+    if (!isVideo(mediaUrl)) {
+        const img = document.getElementById('modalImg');
+        if (img) {
+            img.src = mediaUrl;
+            img.alt = post.title;
+        }
+    }
     document.getElementById('modalCategory').textContent = post.category;
     document.getElementById('modalTitle').textContent = post.title;
     document.getElementById('modalAuthorAvatar').textContent = post.authorEmoji;
@@ -331,6 +511,11 @@ function openPost(id) {
     up.classList.toggle('active', post.userVote === 'up');
     dn.classList.toggle('active', post.userVote === 'down');
 
+    // Navigation visibility
+    const currentIndex = state.activePosts.findIndex(p => p.id === id);
+    document.getElementById('modalPrev').style.display = currentIndex > 0 ? 'flex' : 'none';
+    document.getElementById('modalNext').style.display = currentIndex < state.activePosts.length - 1 ? 'flex' : 'none';
+
     // Tags
     const tagsEl = document.getElementById('modalTags');
     tagsEl.innerHTML = post.tags.map(t => `<span class="post-tag">${t}</span>`).join('');
@@ -339,6 +524,16 @@ function openPost(id) {
     renderComments(post);
 
     openOverlay('postModal');
+}
+
+function navigateModal(dir) {
+    if (!state.currentPost) return;
+    const currentIndex = state.activePosts.findIndex(p => p.id === state.currentPost.id);
+    const newIndex = currentIndex + dir;
+
+    if (newIndex >= 0 && newIndex < state.activePosts.length) {
+        openPost(state.activePosts[newIndex].id);
+    }
 }
 
 function renderComments(post) {
@@ -402,22 +597,42 @@ function addComment(text) {
  * No secret is exposed: the JWT is validated server-side in production, but for a
  * client-only demo we can safely read the payload to get name / email / picture.
  */
-function handleGoogleCredential(response) {
+async function handleGoogleCredential(response) {
     try {
         // Decode the JWT payload (Base64url → JSON)
-        const payload = JSON.parse(
-            atob(response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
-        );
+        // Using a more robust method to handle non-Latin1 characters
+        const base64Url = response.credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
 
-        loginUser({
-            username: payload.name || payload.email,
-            email: payload.email,
-            picture: payload.picture || '',
-            provider: 'google',
+        const payload = JSON.parse(jsonPayload);
+
+        // Get a MemeVault token from the server
+        const res = await apiFetch('/api/auth/google', {
+            method: 'POST',
+            body: JSON.stringify({
+                username: payload.name || payload.email,
+                email: payload.email,
+                picture: payload.picture || '',
+            })
         });
+
+        const data = await res.json();
+        if (res.ok) {
+            loginUser({
+                ...data.user,
+                token: data.token,
+                provider: 'google',
+            });
+        } else {
+            console.error('Login error response:', data);
+            showToast(`❌ Google login failed: ${data.error || 'Server error'}`, 'error');
+        }
     } catch (err) {
-        console.error('Google credential decode failed:', err);
-        showToast('⚠️ Google sign-in failed. Try again.', 'error');
+        console.error('Google login catch block:', err);
+        showToast('⚠️ Google sign-in failed. Check console for details.', 'error');
     }
 }
 
@@ -429,24 +644,20 @@ window.handleGoogleCredential = handleGoogleCredential;
 // ────────────────────────────────────────────────────
 
 /**
- * @param {string|{username,email,picture,provider}} userInfo
- *   Pass a plain string for username/password login, or an object for OAuth.
+ * @param {object} userInfo - { username, email, picture, token }
  */
 function loginUser(userInfo) {
-    if (typeof userInfo === 'string') {
-        state.user = { username: userInfo, email: '', picture: '', provider: 'local' };
-    } else {
-        state.user = userInfo;
-    }
+    state.user = userInfo;
+    saveState();
 
-    const { username, picture, provider } = state.user;
+    const { username, picture, isInit, provider } = userInfo;
 
     // Hide sign-in button, show avatar
     document.getElementById('loginBtn').style.display = 'none';
     const aw = document.getElementById('avatarMenu');
     aw.style.display = 'flex';
 
-    // Avatar: use real Google profile picture if available, else a generated one
+    // Update avatar UI
     const av = document.getElementById('userAvatar');
     if (picture) {
         av.src = picture;
@@ -468,22 +679,37 @@ function loginUser(userInfo) {
     saveState();
 
     // Check if initializing (don't show toast on boot if already logged in)
-    if (!userInfo.isInit) {
+    if (!isInit) {
         showToast(`👋 Welcome, ${username}${providerLabel}!`, 'success');
+
+        // RE-FETCH POSTS to get saved status correctly from DB
+        loadState().then(newState => {
+            state.posts = newState.posts;
+            state.hasMore = newState.hasMore;
+            refreshFilteredFeed();
+        });
+    } else {
+        refreshFilteredFeed();
     }
     closeOverlay('loginModal');
 }
 
-function logoutUser() {
+function logout() {
     // Revoke Google token if signed in via Google
     if (state.user && state.user.provider === 'google' && window.google && google.accounts) {
         try {
-            google.accounts.id.disableAutoSelect();
-        } catch (e) { /* ignore if GIS not loaded */ }
+            google.accounts.id.revoke(state.user.email, done => {
+                console.log('Google session revoked');
+            });
+        } catch (e) {
+            console.error('Failed to revoke Google session', e);
+        }
     }
 
     state.user = null;
     saveState();
+
+    // Reset UI
     document.getElementById('loginBtn').style.display = '';
     document.getElementById('avatarMenu').style.display = 'none';
 
@@ -492,6 +718,14 @@ function logoutUser() {
     if (commentAv) commentAv.textContent = '😎';
 
     showToast('👋 Signed out. See ya!');
+
+    // Refresh feed to show standard "Hot" view and CLEAR saved/nsfw state
+    state.activeCat = 'all';
+    loadState().then(newState => {
+        state.posts = newState.posts;
+        state.hasMore = newState.hasMore;
+        refreshFilteredFeed();
+    });
 }
 
 // ────────────────────────────────────────────────────
@@ -530,14 +764,15 @@ async function loadMorePosts() {
     const btn = document.getElementById('loadMoreBtn');
 
     spinner.classList.add('active');
-    btnText.textContent = 'Loading…';
+    if (btnText) btnText.textContent = 'Loading…';
 
     try {
-        const isLoggedIn = !!state.user;
-        const res = await fetch(`/api/posts?loggedIn=${isLoggedIn}&limit=6&offset=${state.posts.length}`);
+        const token = state.user?.token;
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch(`/api/posts?limit=1000&offset=${state.posts.length}`, { headers });
         if (res.ok) {
-            const newPosts = await res.json();
-            if (newPosts.length < 6) {
+            const newPosts = (await res.json()).map(processPostMetadata);
+            if (newPosts.length < 1000) {
                 state.hasMore = false;
             }
             state.posts = [...state.posts, ...newPosts];
@@ -545,12 +780,14 @@ async function loadMorePosts() {
             refreshFilteredFeed();
 
             if (!state.hasMore) {
-                btnText.textContent = "no more memes, please post more";
-                btn.disabled = true;
-                btn.style.opacity = '0.7';
-                btn.style.cursor = 'default';
+                if (btnText) btnText.textContent = "no more memes, please post more";
+                if (btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.7';
+                    btn.style.cursor = 'default';
+                }
             } else {
-                btnText.textContent = 'Load More';
+                if (btnText) btnText.textContent = 'Load More';
             }
 
             if (newPosts.length > 0) {
@@ -571,7 +808,7 @@ async function loadMorePosts() {
 
 async function loadCommunityStats() {
     try {
-        const res = await fetch('/api/stats');
+        const res = await apiFetch('/api/stats');
         if (!res.ok) return;
         const stats = await res.json();
 
@@ -624,7 +861,7 @@ async function loadCommunityStats() {
 }
 
 // ────────────────────────────────────────────────────
-// NAVBAR SCROLL EFFECT
+// SCROLL EFFECTS & INFINITE SCROLL
 // ────────────────────────────────────────────────────
 
 function initScrollEffects() {
@@ -632,13 +869,154 @@ function initScrollEffects() {
     const scrollBtn = document.getElementById('scrollTop');
 
     const mainContent = document.querySelector('.main-content');
-    mainContent.addEventListener('scroll', () => {
+
+    let isFetching = false;
+
+    mainContent.addEventListener('scroll', async () => {
         const y = mainContent.scrollTop;
         navbar.classList.toggle('scrolled', y > 10);
         scrollBtn.classList.toggle('visible', y > 300);
+
+        // Infinite Scroll Logic
+        if (state.hasMore && !isFetching) {
+            if (mainContent.scrollHeight - mainContent.scrollTop - mainContent.clientHeight < 800) {
+                isFetching = true;
+                await loadMorePosts();
+                isFetching = false;
+            }
+        }
     });
 
     scrollBtn.addEventListener('click', () => mainContent.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    // Modal Navigation
+    document.getElementById('modalPrev').addEventListener('click', (e) => { e.stopPropagation(); navigateModal(-1); });
+    document.getElementById('modalNext').addEventListener('click', (e) => { e.stopPropagation(); navigateModal(1); });
+
+    // Keyboard Navigation
+    document.addEventListener('keydown', (e) => {
+        const modal = document.getElementById('postModal');
+        if (modal.classList.contains('open')) {
+            if (e.key === 'ArrowLeft') navigateModal(-1);
+            if (e.key === 'ArrowRight') navigateModal(1);
+        }
+    });
+}
+
+// ────────────────────────────────────────────────────
+// MEME GENERATOR
+// ────────────────────────────────────────────────────
+
+let memeGenState = {
+    image: null,
+    topText: '',
+    bottomText: '',
+    fontSize: 40,
+    color: '#ffffff'
+};
+
+function updateMemeCanvas() {
+    const canvas = document.getElementById('memeCanvas');
+    const ctx = canvas.getContext('2d');
+    if (!memeGenState.image) return;
+
+    // Set canvas size to match image (capped for performance/view)
+    const img = memeGenState.image;
+    const maxW = 800;
+    const scale = Math.min(1, maxW / img.width);
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // Text settings
+    const fontSize = parseInt(memeGenState.fontSize) * scale;
+    ctx.font = `900 ${fontSize}px Impact, Arial Black, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = memeGenState.color;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = fontSize / 8;
+    ctx.lineJoin = 'round';
+
+    const drawText = (text, x, y, isBottom) => {
+        ctx.textBaseline = isBottom ? 'bottom' : 'top';
+        ctx.strokeText(text.toUpperCase(), x, y);
+        ctx.fillText(text.toUpperCase(), x, y);
+    };
+
+    if (memeGenState.topText) {
+        drawText(memeGenState.topText, canvas.width / 2, 10 * scale, false);
+    }
+    if (memeGenState.bottomText) {
+        drawText(memeGenState.bottomText, canvas.width / 2, canvas.height - (10 * scale), true);
+    }
+}
+
+async function handleMemeGenFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            memeGenState.image = img;
+            updateMemeCanvas();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+async function publishMeme() {
+    const canvas = document.getElementById('memeCanvas');
+    if (!memeGenState.image) return showToast('⚠️ Add an image first!', 'error');
+
+    const btn = document.getElementById('memePublishBtn');
+    btn.disabled = true;
+    btn.textContent = 'Publishing...';
+
+    try {
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+        const formData = new FormData();
+        formData.append('file', blob, 'meme.jpg');
+
+        const uploadRes = await apiFetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+            headers: {}
+        });
+        if (!uploadRes.ok) throw new Error('Upload failed');
+        const uploadData = await uploadRes.json();
+
+        const titleText = (memeGenState.topText + ' ' + memeGenState.bottomText).trim() || 'My Masterpiece';
+        const newPost = {
+            title: titleText,
+            category: 'Funny',
+            image: uploadData.url,
+            author: state.user ? state.user.username : 'Anonymous',
+            authorPic: state.user ? state.user.picture : '',
+            tags: ['#meme', '#generator']
+        };
+
+        const postRes = await apiFetch('/api/posts', {
+            method: 'POST',
+            body: JSON.stringify(newPost)
+        });
+
+        if (postRes.ok) {
+            showToast('🚀 Meme published!', 'success');
+            closeOverlay('memeGenModal');
+            state.activeCat = 'all';
+            state.activeSort = 'new';
+            // Reload posts (simple way)
+            location.reload();
+        }
+    } catch (err) {
+        console.error('Publish failed:', err);
+        showToast('❌ Failed to publish', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Publish';
+    }
 }
 
 // ────────────────────────────────────────────────────
@@ -665,6 +1043,7 @@ async function init() {
     refreshFilteredFeed();
     loadCommunityStats();
     initScrollEffects();
+    initVideoObserver();
 
     // Set initial state of Load More button
     if (!state.hasMore) {
@@ -682,6 +1061,22 @@ async function init() {
             e.preventDefault();
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             a.classList.add('active');
+            const section = a.dataset.section;
+            if (section === 'hot') {
+                state.activeCat = 'all';
+                state.activeSort = 'hot';
+            } else if (section === 'trending') {
+                state.activeCat = 'all';
+                state.activeSort = 'top';
+            } else if (section === 'fresh') {
+                state.activeCat = 'all';
+                state.activeSort = 'new';
+            } else if (section === 'foryou') {
+                state.activeCat = 'foryou';
+            } else {
+                state.activeCat = section;
+            }
+            refreshFilteredFeed();
         });
     });
 
@@ -748,6 +1143,14 @@ async function init() {
         }
     });
 
+    // Modal remix
+    const remixBtn = document.getElementById('modalRemix');
+    if (remixBtn) {
+        remixBtn.addEventListener('click', () => {
+            if (state.currentPost) handleRemix(state.currentPost);
+        });
+    }
+
     // Comment submit
     document.getElementById('commentSubmit').addEventListener('click', () => {
         const input = document.getElementById('commentInput');
@@ -760,6 +1163,45 @@ async function init() {
             e.target.value = '';
         }
     });
+
+    // AI Roast
+    const roastBtn = document.getElementById('aiRoastBtn');
+    if (roastBtn) {
+        roastBtn.addEventListener('click', async () => {
+            if (!state.user) {
+                openOverlay('loginModal');
+                showToast('⚠️ Please sign in to roast.', 'error');
+                return;
+            }
+            if (!state.currentPost) return;
+            
+            const originalText = roastBtn.textContent;
+            roastBtn.textContent = '🤔...';
+            roastBtn.disabled = true;
+            
+            try {
+                const res = await apiFetch('/api/ai/roast', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        title: state.currentPost.title,
+                        tags: state.currentPost.tags
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    addComment(data.text);
+                } else {
+                    showToast('❌ ' + (data.error || 'Failed to roast'), 'error');
+                }
+            } catch (err) {
+                console.error('Roast error:', err);
+                showToast('❌ Failed to connect to AI', 'error');
+            } finally {
+                roastBtn.textContent = originalText;
+                roastBtn.disabled = false;
+            }
+        });
+    }
 
     // Upload modal – open / close
     document.getElementById('uploadBtn').addEventListener('click', () => {
@@ -890,23 +1332,25 @@ async function init() {
         try {
             let imageUrl;
 
-            if (SERVER_URL !== null) {
-                // ── Server mode: POST file to /api/upload ──────────────────
-                const formData = new FormData();
-                formData.append('file', pendingFile);
+            // ── Server mode: POST file to /api/upload ──────────────────
+            const formData = new FormData();
+            formData.append('file', pendingFile);
 
-                const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                if (!res.ok) throw new Error(`Server upload failed: ${res.status}`);
-                const data = await res.json();
-                imageUrl = data.url; // e.g. /uploads/1700000000-123456.png
-            } else {
-                // ── Fallback (file:// mode): use object URL (session only) ─
-                imageUrl = URL.createObjectURL(pendingFile);
-                showToast('⚠️ Open via http://localhost:8080 for permanent file saves.', '');
-            }
+            // Note: browser doesn't need 'Content-Type': 'multipart/form-data' manually set with FormData
+            const res = await apiFetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+                headers: {} // apiFetch defaults to JSON, but for FormData we MUST let browser set it
+            });
+
+            // Special override for FormData: avoid setting Content-Type in apiFetch
+            // Wait, I should fix apiFetch to handle FormData better.
+
+            if (!res.ok) throw new Error(`Server upload failed: ${res.status}`);
+            const data = await res.json();
+            imageUrl = data.url;
 
             let newPost = {
-                id: Date.now(), // fallback
                 title,
                 category: cat.charAt(0).toUpperCase() + cat.slice(1),
                 image: imageUrl,
@@ -915,17 +1359,15 @@ async function init() {
                 tags
             };
 
-            if (SERVER_URL !== null) {
-                // Save post to the database
-                const postRes = await fetch('/api/posts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newPost)
-                });
-                if (postRes.ok) {
-                    const postData = await postRes.json();
-                    newPost.id = postData.id;
-                }
+            // Save post to the database
+            const postRes = await apiFetch('/api/posts', {
+                method: 'POST',
+                body: JSON.stringify(newPost)
+            });
+
+            if (postRes.ok) {
+                const postData = await postRes.json();
+                newPost.id = postData.id;
             }
 
             // Fill out client side properties
@@ -993,15 +1435,57 @@ async function init() {
         document.getElementById('loginForm').style.display = 'none';
     });
 
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
+    // Login Form Submit
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const user = document.getElementById('loginUsername').value.trim() || 'MemeUser';
-        loginUser(user);
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        if (!username || !password) return showToast('⚠️ Please enter username and password', 'error');
+
+        try {
+            const res = await apiFetch('/api/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                loginUser({ ...data.user, token: data.token });
+            } else {
+                showToast(`❌ ${data.error}`, 'error');
+            }
+        } catch (err) {
+            console.error('Login failed:', err);
+            showToast('❌ Login failed. Check your connection.', 'error');
+        }
     });
-    document.getElementById('signupForm').addEventListener('submit', (e) => {
+
+    // Signup Form Submit
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const user = document.getElementById('signupUsername').value.trim() || 'NewMemer';
-        loginUser(user);
+        const username = document.getElementById('signupUsername').value.trim();
+        const email = document.getElementById('signupEmail').value.trim();
+        const password = document.getElementById('signupPassword').value;
+
+        if (!username || !email || !password) return showToast('⚠️ Please fill all fields', 'error');
+
+        try {
+            const res = await apiFetch('/api/auth/signup', {
+                method: 'POST',
+                body: JSON.stringify({ username, email, password })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast('🎉 Account created! Please log in.', 'success');
+                // Switch to login tab
+                document.getElementById('signinTab').click();
+            } else {
+                showToast(`❌ ${data.error}`, 'error');
+            }
+        } catch (err) {
+            console.error('Signup failed:', err);
+            showToast('❌ Signup failed.', 'error');
+        }
     });
 
     // ── Fallback Google buttons ──────────────────────────────────────────────
@@ -1047,18 +1531,40 @@ async function init() {
     }
 
     // Logout
-    document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); logoutUser(); });
+    document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); logout(); });
+
+    // My Profile / Saved Links
+    document.getElementById('myPostsLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        state.activeCat = 'myposts';
+        refreshFilteredFeed();
+        document.getElementById('avatarDropdown').style.display = 'none'; // Close dropdown
+    });
+
+    document.getElementById('savedMemesLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        state.activeCat = 'savedposts';
+        refreshFilteredFeed();
+        document.getElementById('avatarDropdown').style.display = 'none'; // Close dropdown
+    });
 
     // Join community
-    document.getElementById('joinBtn').addEventListener('click', () => {
+    document.getElementById('joinBtn')?.addEventListener('click', () => {
         if (!state.user) { openOverlay('loginModal'); return; }
         showToast('🎉 You joined the community!', 'success');
     });
 
     // Hamburger / sidebar toggle
-    document.getElementById('menuToggle').addEventListener('click', () => {
-        document.getElementById('sidebar').classList.toggle('open');
-    });
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarClose = document.getElementById('sidebarClose');
+
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', () => sidebar.classList.add('open'));
+    }
+    if (sidebarClose && sidebar) {
+        sidebarClose.addEventListener('click', () => sidebar.classList.remove('open'));
+    }
 
     // Keyboard ESC
     document.addEventListener('keydown', (e) => {
@@ -1066,9 +1572,274 @@ async function init() {
             closeOverlay('postModal');
             closeOverlay('uploadModal');
             closeOverlay('loginModal');
-            document.getElementById('sidebar').classList.remove('open');
+            closeOverlay('memeGenModal');
+            if (sidebar) sidebar.classList.remove('open');
         }
     });
+
+    // ── Meme Generator Listeners ──
+    document.getElementById('memeGenLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        openOverlay('memeGenModal');
+    });
+    document.getElementById('memeGenClose').addEventListener('click', () => closeOverlay('memeGenModal'));
+
+    document.getElementById('genFileInput').addEventListener('change', (e) => handleMemeGenFile(e.target.files[0]));
+
+    ['memeTextTop', 'memeTextBottom', 'memeFontSize', 'memeColor'].forEach(id => {
+        document.getElementById(id).addEventListener('input', (e) => {
+            const key = id.replace('meme', '').charAt(0).toLowerCase() + id.replace('meme', '').slice(1);
+            memeGenState[key] = e.target.value;
+            updateMemeCanvas();
+        });
+    });
+
+    document.getElementById('memePublishBtn').addEventListener('click', publishMeme);
+    document.getElementById('memeDownloadBtn').addEventListener('click', () => {
+        const canvas = document.getElementById('memeCanvas');
+        if (!memeGenState.image) return showToast('⚠️ Add an image first!', 'error');
+        const link = document.createElement('a');
+        link.download = 'memevault-masterpiece.jpg';
+        link.href = canvas.toDataURL('image/jpeg', 0.9);
+        link.click();
+    });
+
+    // AI Generation
+    document.getElementById('btnAiGenImage').addEventListener('click', () => generateAIMeme('image'));
+    document.getElementById('btnAiGenVideo').addEventListener('click', () => generateAIMeme('video'));
+
+    initChat();
+}
+
+async function generateAIMeme(type) {
+    const prompt = document.getElementById('aiMemePrompt').value.trim();
+    if (!prompt) return showToast('⚠️ Enter a prompt first!', 'error');
+
+    if (!state.user) {
+        openOverlay('loginModal');
+        return showToast('⚠️ Please sign in to use AI generation.', 'error');
+    }
+
+    const status = document.getElementById('aiLoadingStatus');
+    const btnImg = document.getElementById('btnAiGenImage');
+    const btnVid = document.getElementById('btnAiGenVideo');
+
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+        attempts++;
+        try {
+            status.style.display = 'block';
+            status.innerHTML = `<span class="ai-pulse">✨ AI is thinking (Attempt ${attempts}/${maxAttempts})...</span>`;
+            btnImg.disabled = true;
+            btnVid.disabled = true;
+
+            // If an image exists on canvas, we can send it for "remixing"
+            let imageData = null;
+            if (memeGenState.image) {
+                const canvas = document.getElementById('memeCanvas');
+                imageData = canvas.toDataURL('image/jpeg', 0.8);
+            }
+
+            const res = await apiFetch('/api/ai/generate', {
+                method: 'POST',
+                body: JSON.stringify({ prompt, type, image: imageData })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'AI request failed');
+            }
+
+            const data = await res.json();
+            console.log(`AI Gen URL [${type}]:`, data.url);
+
+            // Use the proxy to load the image (Bypasses CORS/Network issues)
+            const proxyUrl = `/api/ai/proxy?url=${encodeURIComponent(data.url)}`;
+
+            await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous'; // Still needed for canvas but proxy handles the response headers
+                img.onload = () => {
+                    console.log('AI Image loaded successfully via proxy.');
+                    memeGenState.image = img;
+                    updateMemeCanvas();
+                    resolve();
+                };
+                img.onerror = (err) => {
+                    console.error('AI Proxy loading error:', err);
+                    reject(new Error(`Failed to load generated AI asset via proxy.`));
+                };
+                img.src = proxyUrl;
+            });
+
+            showToast(`✨ AI ${type === 'video' ? 'Video' : 'Image'} ready!`, 'success');
+            status.style.display = 'none';
+            btnImg.disabled = false;
+            btnVid.disabled = false;
+            return; // Exit on success
+
+        } catch (err) {
+            console.error(`AI Gen Attempt ${attempts} failed:`, err);
+            if (attempts >= maxAttempts) {
+                showToast(`❌ ${err.message}`, 'error');
+                status.style.display = 'none';
+                btnImg.disabled = false;
+                btnVid.disabled = false;
+            } else {
+                // Wait small delay before retry
+                await new Promise(r => setTimeout(r, 1500));
+            }
+        }
+    }
+}
+
+// ────────────────────────────────────────────────────
+// GLOBAL CHAT
+// ────────────────────────────────────────────────────
+
+function initChat() {
+    const toggle = document.getElementById('chatToggle');
+    const drawer = document.getElementById('chatDrawer');
+    const close = document.getElementById('chatClose');
+    const form = document.getElementById('chatForm');
+    const input = document.getElementById('chatInput');
+    const refreshBtn = document.getElementById('chatRefresh');
+
+    if (!toggle || !drawer || !close || !form || !input) return;
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            refreshBtn.classList.add('spinning');
+            fetchMessages().finally(() => {
+                setTimeout(() => refreshBtn.classList.remove('spinning'), 500);
+            });
+        });
+    }
+
+    toggle.addEventListener('click', () => {
+        state.chatOpen = !state.chatOpen;
+        drawer.classList.toggle('open', state.chatOpen);
+        if (state.chatOpen) {
+            fetchMessages();
+            const badge = document.getElementById('chatBadge');
+            if (badge) badge.style.display = 'none';
+        }
+    });
+
+    close.addEventListener('click', () => {
+        state.chatOpen = false;
+        drawer.classList.remove('open');
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+
+        if (!state.user) {
+            openOverlay('loginModal');
+            showToast('⚠️ Please sign in to chat.', 'error');
+            return;
+        }
+
+        input.value = '';
+
+        // Optimistic UI: Add message locally first
+        const tempMsg = {
+            id: Date.now(),
+            username: state.user.username,
+            text,
+            isTemp: true
+        };
+        state.chatMessages.push(tempMsg);
+        renderMessages();
+
+        await sendMessage(text);
+        // Small delay to let server process, then sync
+        setTimeout(fetchMessages, 300);
+    });
+
+    // Initial fetch
+    fetchMessages();
+
+    // Polling every 4 seconds
+    setInterval(() => {
+        if (state.chatOpen) fetchMessages();
+    }, 4000);
+}
+
+async function fetchMessages() {
+    try {
+        const res = await fetch('/api/chat');
+        if (res.ok) {
+            const msgs = await res.json();
+
+            // Safety check: ensure msgs is an array
+            if (!Array.isArray(msgs)) {
+                console.warn('API /api/chat did not return an array:', msgs);
+                return;
+            }
+
+            // If new messages found, show badge if closed
+            const currentCount = state.chatMessages?.length || 0;
+            if (msgs.length > currentCount && !state.chatOpen) {
+                const badge = document.getElementById('chatBadge');
+                if (badge) badge.style.display = 'block';
+            }
+
+            state.chatMessages = msgs;
+            renderMessages();
+        }
+    } catch (e) {
+        console.error('Chat fetch failed', e);
+    }
+}
+
+function renderMessages() {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (state.chatMessages.length === 0) {
+        container.innerHTML = '<div class="chat-welcome">No messages yet. Be the first to say hi!</div>';
+        return;
+    }
+
+    state.chatMessages.forEach(msg => {
+        const div = document.createElement('div');
+        // Ensure we compare usernames correctly for "self" styling
+        const isSelf = state.user && (msg.username === state.user.username || msg.user_id === state.user.id);
+        div.className = `chat-msg ${isSelf ? 'self' : 'other'} ${msg.isTemp ? 'pending' : ''}`;
+
+        div.innerHTML = `
+            <div class="chat-msg-header">
+                <span class="chat-msg-author">${msg.username}</span>
+            </div>
+            <div class="chat-msg-bubble">${msg.text}</div>
+        `;
+        container.appendChild(div);
+    });
+
+    // Ensure scrolling to bottom
+    container.scrollTop = container.scrollHeight;
+}
+
+async function sendMessage(text) {
+    try {
+        const res = await apiFetch('/api/chat', {
+            method: 'POST',
+            body: JSON.stringify({ text })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            showToast('❌ ' + (err.error || 'Failed to send'), 'error');
+        }
+    } catch (e) {
+        showToast('❌ Failed to send message', 'error');
+    }
 }
 
 // ────────────────────────────────────────────────────

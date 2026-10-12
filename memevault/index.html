@@ -7,6 +7,7 @@
   <meta name="description"
     content="MemeVault – Your daily dose of the internet's funniest memes, videos, and viral content. Vote, comment, and share the laughs." />
   <title>MemeVault – Go Fun or Go Home</title>
+  <link rel="icon" type="image/png" href="memevault_icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
@@ -37,13 +38,15 @@
           <span></span><span></span><span></span>
         </button>
         <a href="#" class="logo">
-          <div class="logo-icon">⚡</div>
+          <img src="memevault_icon.png" class="logo-icon-img" alt="MemeVault" width="28" height="28"
+            style="border-radius:6px; object-fit:contain;" />
           <span class="logo-text">MemeVault</span>
         </a>
       </div>
 
       <nav class="navbar-center" id="mainNav">
-        <a href="#" class="nav-link active" data-section="hot">🔥 Hot</a>
+        <a href="#" class="nav-link active" data-section="foryou">🧠 For You</a>
+        <a href="#" class="nav-link" data-section="hot">🔥 Hot</a>
         <a href="#" class="nav-link" data-section="trending">📈 Trending</a>
         <a href="#" class="nav-link" data-section="fresh">✨ Fresh</a>
         <a href="#" class="nav-link" data-section="gaming">🎮 Gaming</a>
@@ -74,8 +77,8 @@
         <div class="avatar-wrap" id="avatarMenu" style="display:none;">
           <img src="" alt="avatar" class="avatar" id="userAvatar" />
           <div class="avatar-dropdown" id="avatarDropdown">
-            <a href="#">My Posts</a>
-            <a href="#">Saved</a>
+            <a href="#" id="myPostsLink">My Posts</a>
+            <a href="#" id="savedMemesLink">Saved</a>
             <a href="#">Settings</a>
             <a href="#" id="logoutBtn">Sign Out</a>
           </div>
@@ -87,6 +90,7 @@
     <div class="categories-ribbon" id="categoriesRibbon">
       <div class="categories-inner">
         <button class="cat-pill active" data-cat="all">All</button>
+        <button class="cat-pill" data-cat="kiswahili">🌍 Kiswahili</button>
         <button class="cat-pill" data-cat="funny">😂 Funny</button>
         <button class="cat-pill" data-cat="gaming">🎮 Gaming</button>
         <button class="cat-pill" data-cat="anime">⛩️ Anime</button>
@@ -100,8 +104,9 @@
     </div>
   </header>
 
-  <!-- ====== SIDEBAR ====== -->
+  <!-- ====== PATTERN 3: SIDEBAR MOVED TO HIDDEN DRAWER ====== -->
   <aside class="sidebar" id="sidebar">
+    <button class="modal-close" id="sidebarClose" aria-label="Close Menu" style="display:none;">✕</button>
     <div class="sidebar-section">
       <h3 class="sidebar-title">🔥 Trending Tags</h3>
       <div class="tag-cloud">
@@ -119,14 +124,6 @@
     </div>
 
     <div class="sidebar-section">
-      <h3 class="sidebar-title">👑 Top Contributors</h3>
-      <ul class="contributors-list" id="contributorsList">
-        <!-- Injected by JS -->
-      </ul>
-    </div>
-
-
-    <div class="sidebar-section">
       <h3 class="sidebar-title">🌐 Community</h3>
       <div class="community-stats">
         <div class="stat-item">
@@ -134,40 +131,22 @@
           <span class="stat-label">Members</span>
         </div>
         <div class="stat-item">
-          <span class="stat-num" id="statOnline">...</span>
-          <span class="stat-label">Online Now</span>
-        </div>
-        <div class="stat-item">
           <span class="stat-num" id="statLaughs">...</span>
-          <span class="stat-label">Laughs / day</span>
+          <span class="stat-label">Laughs</span>
         </div>
       </div>
-      <button class="join-btn" id="joinBtn">Join Community</button>
     </div>
 
     <div class="sidebar-section">
       <h3 class="sidebar-title">🎯 Popular Sections</h3>
       <ul class="sections-list">
-        <li><a href="#" class="section-link">😂 Memes <span class="section-badge">HOT</span></a></li>
+        <li><a href="#" class="section-link">🌍 Kiswahili <span class="section-badge">HOT</span></a></li>
+        <li><a href="#" class="section-link">😂 Memes</a></li>
         <li><a href="#" class="section-link">🎮 Gaming</a></li>
         <li><a href="#" class="section-link">🐕 Animals</a></li>
-        <li><a href="#" class="section-link">⚡ What the GIF</a></li>
-        <li><a href="#" class="section-link">🌙 Late Night</a></li>
-        <li><a href="#" class="section-link">💻 Programming</a></li>
-        <li><a href="#" class="section-link">💔 Relationships</a></li>
-        <li><a href="#" class="section-link">🎬 Movies & TV</a></li>
+        <li><a href="#" class="section-link" id="memeGenLink">🛠️ Meme Generator <span class="section-badge"
+              style="background:var(--accent)">NEW</span></a></li>
       </ul>
-    </div>
-
-    <div class="sidebar-section">
-      <h3 class="sidebar-title">📢 Rules</h3>
-      <ol class="rules-list">
-        <li>Be funny (or at least try)</li>
-        <li>No hate speech or personal attacks</li>
-        <li>Credit original artists</li>
-        <li>No reposts within 30 days</li>
-        <li>Tag NSFW content appropriately</li>
-      </ol>
     </div>
   </aside>
 
@@ -196,6 +175,18 @@
   <div class="modal-overlay" id="postModal">
     <div class="modal-card" id="modalCard">
       <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+      <button class="modal-nav-btn prev" id="modalPrev" aria-label="Previous Post">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <button class="modal-nav-btn next" id="modalNext" aria-label="Next Post">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
 
       <div class="modal-left">
         <img src="" alt="" class="modal-img" id="modalImg" />
@@ -232,6 +223,16 @@
         <div class="modal-tags" id="modalTags"></div>
 
         <div class="modal-actions">
+          <button class="action-btn" id="modalRemix" style="color:var(--accent-light);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 3 21 3 21 8" />
+              <line x1="4" y1="20" x2="21" y2="3" />
+              <polyline points="21 16 21 21 16 21" />
+              <line x1="15" y1="15" x2="21" y2="21" />
+              <line x1="4" y1="4" x2="9" y2="9" />
+            </svg>
+            Remix
+          </button>
           <button class="action-btn" id="modalShare">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
@@ -267,6 +268,7 @@
             <div class="user-avatar-small">😎</div>
             <input type="text" class="comment-input" id="commentInput" placeholder="Write a comment…" />
             <button class="comment-submit" id="commentSubmit">Send</button>
+            <button class="comment-submit ai-roast-btn" id="aiRoastBtn" style="background:var(--hot); color:white; border:none; margin-left:8px;" title="Generate AI Roast">🔥 Roast</button>
           </div>
 
           <div class="comments-list" id="commentsList">
@@ -294,6 +296,7 @@
       <input type="text" class="upload-field" id="uploadTitle" placeholder="Give your meme a title…" />
       <select class="upload-field" id="uploadCategory">
         <option value="">Select a category</option>
+        <option value="kiswahili">🌍 Kiswahili</option>
         <option value="funny">😂 Funny</option>
         <option value="gaming">🎮 Gaming</option>
         <option value="animals">🐾 Animals</option>
@@ -365,6 +368,133 @@
         </div>
       </form>
     </div>
+  </div>
+
+  <!-- ====== MEME GENERATOR MODAL ====== -->
+  <div class="modal-overlay" id="memeGenModal">
+    <div class="modal-card meme-gen-card">
+      <button class="modal-close" id="memeGenClose">✕</button>
+
+      <div class="modal-left gen-canvas-wrap">
+        <canvas id="memeCanvas"></canvas>
+      </div>
+
+      <div class="modal-right gen-controls">
+        <div class="modal-header">
+          <h2 class="modal-title">🛠️ Meme Generator</h2>
+          <p class="login-sub">Create your own masterpiece</p>
+        </div>
+
+        <div class="gen-form">
+          <label class="gen-label">Template</label>
+          <div class="gen-upload-btn">
+            <label for="genFileInput">📂 Choose Image</label>
+            <input type="file" id="genFileInput" accept="image/*" hidden />
+          </div>
+
+          <!-- AI SECTION -->
+          <div class="gen-ai-container"
+            style="margin-top:20px; padding:15px; background:var(--bg-base); border:1px solid var(--border); border-radius:12px; position:relative; overflow:hidden;">
+            <div class="ai-glow"></div>
+            <label class="gen-label" style="color:var(--accent-light); display:flex; align-items:center; gap:6px;">
+              <span style="font-size:16px;">✨</span> AI Power Generator
+            </label>
+            <textarea id="aiMemePrompt" class="login-field"
+              placeholder="Describe your dream meme... (e.g. 'A cybernetic cat eating ramen in Tokyo')"
+              style="height:80px; font-size:12px; background:var(--bg-elevated); margin-top:10px; resize:none;"></textarea>
+
+            <div class="gen-row" style="margin-top:10px; gap:8px;">
+              <button type="button" id="btnAiGenImage" class="btn-gen-ai"
+                style="flex:1.5; background:var(--accent); border:none; color:white; padding:10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; gap:5px;">
+                ⚡ Generate AI Image
+              </button>
+              <button type="button" id="btnAiGenVideo" class="btn-gen-ai vid"
+                style="flex:1; background:var(--bg-elevated); border:1px solid var(--border); color:var(--text-secondary); padding:10px; border-radius:8px; font-weight:600; cursor:pointer; font-size:11px;">
+                🎬 Video (BETA)
+              </button>
+            </div>
+            <div id="aiLoadingStatus"
+              style="display:none; margin-top:8px; font-size:11px; color:var(--text-muted); text-align:center;">
+              <span class="ai-pulse">✨ Analyzing neural networks...</span>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:10px; margin:20px 0;">
+            <div style="flex:1; height:1px; background:var(--border);"></div>
+            <span style="font-size:10px; color:var(--text-muted); font-weight:800; letter-spacing:1px;">OR CUSTOMIZE
+              TEXT</span>
+            <div style="flex:1; height:1px; background:var(--border);"></div>
+          </div>
+
+          <label class="gen-label">Top Text</label>
+          <input type="text" class="login-field" id="memeTextTop" placeholder="TOP TEXT" />
+
+          <label class="gen-label">Bottom Text</label>
+          <input type="text" class="login-field" id="memeTextBottom" placeholder="BOTTOM TEXT" />
+
+          <div class="gen-row">
+            <div>
+              <label class="gen-label">Font Size</label>
+              <input type="number" class="login-field" id="memeFontSize" value="40" min="10" max="100" />
+            </div>
+            <div>
+              <label class="gen-label">Text Color</label>
+              <input type="color" id="memeColor" value="#ffffff"
+                style="height:44px; width:100%; border:1px solid var(--border); background:var(--bg-elevated); padding:4px; border-radius:8px;" />
+            </div>
+          </div>
+
+          <div class="gen-actions" style="margin-top:20px; display:flex; gap:10px;">
+            <button class="btn-login-submit" id="memeDownloadBtn"
+              style="flex:1; background:var(--bg-elevated); border:1px solid var(--border); color:var(--text-primary)">💾
+              Download</button>
+            <button class="btn-login-submit" id="memePublishBtn" style="flex:1;">🚀 Publish</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== GLOBAL CHAT ====== -->
+  <button class="chat-toggle" id="chatToggle" aria-label="Toggle Chat">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+    <span class="chat-badge" id="chatBadge"></span>
+  </button>
+
+  <div class="chat-drawer" id="chatDrawer">
+    <div class="chat-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <h3>💬 Global Chat</h3>
+        <button id="chatRefresh"
+          style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:4px; display:flex; align-items:center;"
+          title="Refresh Messages">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+      </div>
+      <button class="chat-close" id="chatClose">✕</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <!-- Messages injected by JS -->
+      <div class="chat-welcome">Welcome to the Global Chat! Sign in to join the conversation.</div>
+    </div>
+    <form class="chat-input-area" id="chatForm">
+      <input type="text" id="chatInput" placeholder="Type a message..." maxlength="200" autocomplete="off" />
+      <button type="submit" id="chatSend">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </form>
   </div>
 
   <!-- ====== NOTIFICATION TOAST ====== -->
