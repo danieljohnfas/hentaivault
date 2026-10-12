@@ -12,6 +12,13 @@
 export const AFFILIATE_LINKS = {
 };
 
+export const VPN_PARTNER = {
+  name: 'NordVPN',
+  url: 'https://nordvpn.com/',
+  title: 'Bypass ISP Censorship & Unblock Sites',
+  description: 'Bypass ISP blocks and regional restrictions with ultra-fast servers & strict no logs.'
+};
+
 export function affiliateUrlFor(siteUrl) {
   try {
     const host = new URL(siteUrl).hostname.toLowerCase().replace(/^www\./, '');

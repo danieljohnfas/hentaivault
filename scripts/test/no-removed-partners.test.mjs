@@ -6,8 +6,10 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
+import { fileURLToPath } from 'node:url';
+
 const REMOVED = /pcloud|purevpn/i;
-const ROOT = new URL('../..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const SKIP = new Set(['node_modules', '.git', '.wrangler', '.unlighthouse', 'reports', 'tmp', 'scripts', 'ops']);
 const EXTS = new Set(['.html', '.js', '.mjs', '.css', '.json', '.txt', '.xml']);
 
