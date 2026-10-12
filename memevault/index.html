@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="MemeVault – Your daily dose of the internet's funniest memes, videos, and viral content. Vote, comment, and share the laughs." />
+  <title>MemeVault – Go Fun or Go Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- ====== GOOGLE IDENTITY SERVICES ====== -->
+  <!-- STEP: Replace YOUR_GOOGLE_CLIENT_ID below with your actual Client ID -->
+  <!-- Get one free at: https://console.cloud.google.com → APIs & Services → Credentials -->
+  <meta name="google-signin-client_id"
+    content="243875380073-hm3gd9tsjn98oecb5c12ba54ntvi3ufc.apps.googleusercontent.com" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- GSI one-tap initializer (auto sign-in if user was previously signed in) -->
+  <div id="g_id_onload" data-client_id="243875380073-hm3gd9tsjn98oecb5c12ba54ntvi3ufc.apps.googleusercontent.com"
+    data-callback="handleGoogleCredential" data-auto_select="false" data-cancel_on_tap_outside="true"
+    style="position:absolute;top:70px;right:20px;z-index:500">
+  </div>
+</head>
+
+<body>
+
+  <!-- ====== NAVBAR ====== -->
+  <header class="navbar" id="navbar">
+    <div class="navbar-inner">
+      <div class="navbar-left">
+        <button class="hamburger" id="menuToggle" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+        <a href="#" class="logo">
+          <div class="logo-icon">⚡</div>
+          <span class="logo-text">MemeVault</span>
+        </a>
+      </div>
+
+      <nav class="navbar-center" id="mainNav">
+        <a href="#" class="nav-link active" data-section="hot">🔥 Hot</a>
+        <a href="#" class="nav-link" data-section="trending">📈 Trending</a>
+        <a href="#" class="nav-link" data-section="fresh">✨ Fresh</a>
+        <a href="#" class="nav-link" data-section="gaming">🎮 Gaming</a>
+        <a href="#" class="nav-link" data-section="animals">🐾 Animals</a>
+        <a href="#" class="nav-link" data-section="wholesome">💛 Wholesome</a>
+      </nav>
+
+      <div class="navbar-right">
+        <div class="search-wrap">
+          <input type="text" id="searchInput" class="search-input" placeholder="Search memes…" autocomplete="off" />
+          <button class="search-btn" id="searchBtn" aria-label="Search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </button>
+        </div>
+        <button class="btn-upload" id="uploadBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <polyline points="19 12 12 5 5 12" />
+          </svg>
+          Post
+        </button>
+        <button class="btn-login" id="loginBtn">Sign In</button>
+        <div class="avatar-wrap" id="avatarMenu" style="display:none;">
+          <img src="" alt="avatar" class="avatar" id="userAvatar" />
+          <div class="avatar-dropdown" id="avatarDropdown">
+            <a href="#">My Posts</a>
+            <a href="#">Saved</a>
+            <a href="#">Settings</a>
+            <a href="#" id="logoutBtn">Sign Out</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Categories ribbon -->
+    <div class="categories-ribbon" id="categoriesRibbon">
+      <div class="categories-inner">
+        <button class="cat-pill active" data-cat="all">All</button>
+        <button class="cat-pill" data-cat="funny">😂 Funny</button>
+        <button class="cat-pill" data-cat="gaming">🎮 Gaming</button>
+        <button class="cat-pill" data-cat="anime">⛩️ Anime</button>
+        <button class="cat-pill" data-cat="wholesome">💛 Wholesome</button>
+        <button class="cat-pill" data-cat="animals">🐾 Animals</button>
+        <button class="cat-pill" data-cat="dark">🌑 Dark Humor</button>
+        <button class="cat-pill" data-cat="programming">💻 Programming</button>
+        <button class="cat-pill" data-cat="relationship">💔 Relationship</button>
+        <button class="cat-pill" data-cat="sports">⚽ Sports</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ====== SIDEBAR ====== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section">
+      <h3 class="sidebar-title">🔥 Trending Tags</h3>
+      <div class="tag-cloud">
+        <span class="tag">#monday</span>
+        <span class="tag">#cats</span>
+        <span class="tag">#devhumor</span>
+        <span class="tag">#relateable</span>
+        <span class="tag">#gamers</span>
+        <span class="tag">#dogs</span>
+        <span class="tag">#cringe</span>
+        <span class="tag">#wholesome</span>
+        <span class="tag">#anime</span>
+        <span class="tag">#weekendvibes</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3 class="sidebar-title">👑 Top Contributors</h3>
+      <ul class="contributors-list" id="contributorsList">
+        <!-- Injected by JS -->
+      </ul>
+    </div>
+
+
+    <div class="sidebar-section">
+      <h3 class="sidebar-title">🌐 Community</h3>
+      <div class="community-stats">
+        <div class="stat-item">
+          <span class="stat-num" id="statMembers">...</span>
+          <span class="stat-label">Members</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="statOnline">...</span>
+          <span class="stat-label">Online Now</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="statLaughs">...</span>
+          <span class="stat-label">Laughs / day</span>
+        </div>
+      </div>
+      <button class="join-btn" id="joinBtn">Join Community</button>
+    </div>
+
+    <div class="sidebar-section">
+      <h3 class="sidebar-title">🎯 Popular Sections</h3>
+      <ul class="sections-list">
+        <li><a href="#" class="section-link">😂 Memes <span class="section-badge">HOT</span></a></li>
+        <li><a href="#" class="section-link">🎮 Gaming</a></li>
+        <li><a href="#" class="section-link">🐕 Animals</a></li>
+        <li><a href="#" class="section-link">⚡ What the GIF</a></li>
+        <li><a href="#" class="section-link">🌙 Late Night</a></li>
+        <li><a href="#" class="section-link">💻 Programming</a></li>
+        <li><a href="#" class="section-link">💔 Relationships</a></li>
+        <li><a href="#" class="section-link">🎬 Movies & TV</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-section">
+      <h3 class="sidebar-title">📢 Rules</h3>
+      <ol class="rules-list">
+        <li>Be funny (or at least try)</li>
+        <li>No hate speech or personal attacks</li>
+        <li>Credit original artists</li>
+        <li>No reposts within 30 days</li>
+        <li>Tag NSFW content appropriately</li>
+      </ol>
+    </div>
+  </aside>
+
+  <!-- ====== MAIN FEED ====== -->
+  <main class="main-content">
+    <div class="feed-header">
+      <h1 class="feed-title">🔥 Hot Posts</h1>
+      <div class="sort-controls">
+        <button class="sort-btn active" data-sort="hot">Hot</button>
+        <button class="sort-btn" data-sort="new">New</button>
+        <button class="sort-btn" data-sort="top">Top</button>
+      </div>
+    </div>
+
+    <div class="feed" id="feed">
+      <!-- Posts injected by JS -->
+    </div>
+
+    <button class="load-more" id="loadMoreBtn">
+      <span class="load-more-text">Load More</span>
+      <div class="load-spinner" id="loadSpinner"></div>
+    </button>
+  </main>
+
+  <!-- ====== POST DETAIL MODAL ====== -->
+  <div class="modal-overlay" id="postModal">
+    <div class="modal-card" id="modalCard">
+      <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+
+      <div class="modal-left">
+        <img src="" alt="" class="modal-img" id="modalImg" />
+      </div>
+
+      <div class="modal-right">
+        <div class="modal-header">
+          <span class="modal-category" id="modalCategory"></span>
+          <h2 class="modal-title" id="modalTitle"></h2>
+          <div class="modal-meta">
+            <span class="modal-author-avatar" id="modalAuthorAvatar"></span>
+            <span id="modalAuthor"></span>
+            <span class="dot">·</span>
+            <span id="modalTime"></span>
+          </div>
+        </div>
+
+        <div class="modal-vote-bar">
+          <button class="modal-vote-btn upvote" id="modalUpvote">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          </button>
+          <span class="modal-vote-count" id="modalVoteCount"></span>
+          <button class="modal-vote-btn downvote" id="modalDownvote">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-tags" id="modalTags"></div>
+
+        <div class="modal-actions">
+          <button class="action-btn" id="modalShare">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            Share
+          </button>
+          <button class="action-btn" id="modalSave">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+            </svg>
+            Save
+          </button>
+          <button class="action-btn" id="modalReport">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+              <line x1="4" y1="22" x2="4" y2="15" />
+            </svg>
+            Report
+          </button>
+        </div>
+
+        <div class="comments-section">
+          <h3 class="comments-title">💬 Comments <span class="comment-count" id="commentCount">0</span></h3>
+
+          <div class="comment-input-wrap">
+            <div class="user-avatar-small">😎</div>
+            <input type="text" class="comment-input" id="commentInput" placeholder="Write a comment…" />
+            <button class="comment-submit" id="commentSubmit">Send</button>
+          </div>
+
+          <div class="comments-list" id="commentsList">
+            <!-- Comments rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== UPLOAD MODAL ====== -->
+  <div class="modal-overlay" id="uploadModal">
+    <div class="upload-card">
+      <button class="modal-close" id="uploadClose">✕</button>
+      <h2 class="upload-title">📤 Post a Meme</h2>
+
+      <div class="upload-dropzone" id="dropzone">
+        <div class="dropzone-icon">🖼️</div>
+        <p>Drag & drop your meme here</p>
+        <span>or</span>
+        <label class="btn-file-pick" for="fileInput">Browse Files</label>
+        <input type="file" id="fileInput" accept="image/*,video/*" hidden />
+      </div>
+
+      <input type="text" class="upload-field" id="uploadTitle" placeholder="Give your meme a title…" />
+      <select class="upload-field" id="uploadCategory">
+        <option value="">Select a category</option>
+        <option value="funny">😂 Funny</option>
+        <option value="gaming">🎮 Gaming</option>
+        <option value="animals">🐾 Animals</option>
+        <option value="wholesome">💛 Wholesome</option>
+        <option value="programming">💻 Programming</option>
+        <option value="dark">🌑 Dark Humor</option>
+        <option value="anime">⛩️ Anime</option>
+        <option value="relationship">💔 Relationship</option>
+      </select>
+      <input type="text" class="upload-field" id="uploadTags" placeholder="Tags (comma separated)…" />
+
+      <div class="upload-options" style="margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="uploadNsfw" />
+        <label for="uploadNsfw" style="font-size: 14px; color: var(--text-secondary); cursor: pointer;">Flag as
+          NSFW</label>
+      </div>
+
+      <button class="btn-submit-upload" id="submitUpload">🚀 Publish Meme</button>
+    </div>
+  </div>
+
+  <!-- ====== LOGIN MODAL ====== -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="login-card">
+      <button class="modal-close" id="loginClose">✕</button>
+      <div class="login-logo">⚡</div>
+      <h2 class="login-title">Welcome to MemeVault</h2>
+      <p class="login-sub">Sign in to vote, comment, and post memes</p>
+
+      <div class="login-tabs">
+        <button class="login-tab active" id="signinTab">Sign In</button>
+        <button class="login-tab" id="signupTab">Sign Up</button>
+      </div>
+
+      <form class="login-form" id="loginForm">
+        <input type="text" class="login-field" id="loginUsername" placeholder="Username" />
+        <input type="password" class="login-field" id="loginPassword" placeholder="Password" />
+        <button type="submit" class="btn-login-submit">Sign In</button>
+        <div class="login-divider"><span>or continue with</span></div>
+        <div class="social-btns">
+          <!-- Real Google Sign-In button (rendered by GIS library) -->
+          <div class="gsi-btn-wrap">
+            <div id="googleSignInBtn" class="g_id_signin" data-type="standard" data-shape="pill"
+              data-theme="filled_black" data-text="signin_with" data-size="large" data-logo_alignment="left"
+              data-width="300">
+            </div>
+            <!-- Fallback button shown when GIS script hasn't loaded or Client ID is placeholder -->
+            <button type="button" class="social-btn google" id="googleFallbackBtn">🌐 Continue with Google</button>
+          </div>
+          <button type="button" class="social-btn github" id="githubBtn">🐙 GitHub</button>
+        </div>
+      </form>
+
+      <form class="login-form" id="signupForm" style="display:none;">
+        <input type="text" class="login-field" id="signupUsername" placeholder="Choose a username" />
+        <input type="email" class="login-field" id="signupEmail" placeholder="Email" />
+        <input type="password" class="login-field" id="signupPassword" placeholder="Password" />
+        <button type="submit" class="btn-login-submit">Create Account</button>
+        <div class="login-divider"><span>or sign up with</span></div>
+        <div class="social-btns">
+          <div class="gsi-btn-wrap">
+            <div id="googleSignUpBtn" class="g_id_signin" data-type="standard" data-shape="pill"
+              data-theme="filled_black" data-text="signup_with" data-size="large" data-logo_alignment="left"
+              data-width="300">
+            </div>
+            <button type="button" class="social-btn google" id="googleFallbackSignupBtn">🌐 Continue with
+              Google</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====== NOTIFICATION TOAST ====== -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ====== SCROLL TO TOP ====== -->
+  <button class="scroll-top" id="scrollTop" aria-label="Scroll to top">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+      stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="18 15 12 9 6 15" />
+    </svg>
+  </button>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
