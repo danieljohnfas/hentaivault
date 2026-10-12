@@ -4,9 +4,7 @@
 
 <head>
 
-
-
-    <!-- Google Analytics -->
+<!-- Google Analytics -->
 
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-VF4RKFXMFB"></script>
 
@@ -22,9 +20,7 @@
 
     </script>
 
-
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -112,9 +108,7 @@
 
     </div>
 
-
-
-    <div id="myListGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+<div id="myListGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
 
         <div style="grid-column: 1/-1; text-align:center; padding: 60px; color: var(--text-muted);">
 
@@ -123,12 +117,6 @@
         </div>
 
     </div>
-
-
-
-    <!-- Amazon Affiliate Inline Ad -->
-
-    <div class="hv-amazon-inline-slot"></div>
 
 </main>
 
@@ -187,10 +175,7 @@
 
             </div>
 
-            
-
-
-            <div class="visitor-stats">
+<div class="visitor-stats">
 
                 <span>Global Visitors:</span>
 
@@ -241,8 +226,6 @@
 
     </footer>
 
-
-
 <script>
 
     const escapeHTML = (str) => {
@@ -253,17 +236,13 @@
 
     };
 
-
-
-    async function loadMyList() {
+async function loadMyList() {
 
         let myList = [];
 
         try { myList = JSON.parse(localStorage.getItem('hv_mylist') || '[]'); } catch(e) {}
 
-
-
-        // Check for shared list in URL
+// Check for shared list in URL
 
         const sharedParam = new URLSearchParams(window.location.search).get('list');
 
@@ -279,15 +258,11 @@
 
         }
 
-
-
-        const grid = document.getElementById('myListGrid');
+const grid = document.getElementById('myListGrid');
 
         const countEl = document.getElementById('listCount');
 
-
-
-        if (myList.length === 0) {
+if (myList.length === 0) {
 
             grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:80px 20px;">
 
@@ -307,15 +282,11 @@
 
         }
 
-
-
-        countEl.textContent = `${myList.length} saved site${myList.length !== 1 ? 's' : ''}`;
+countEl.textContent = `${myList.length} saved site${myList.length !== 1 ? 's' : ''}`;
 
         const currentLang = localStorage.getItem('hv_lang') || 'en';
 
-
-
-        // Fetch each site from the API
+// Fetch each site from the API
 
         const sitePromises = myList.map(id => 
 
@@ -325,9 +296,7 @@
 
         const sites = (await Promise.all(sitePromises)).filter(Boolean);
 
-
-
-        if (sites.length === 0) {
+if (sites.length === 0) {
 
             grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--text-muted);">Could not load saved sites. They may have been removed.</div>`;
 
@@ -335,9 +304,7 @@
 
         }
 
-
-
-        grid.innerHTML = '';
+grid.innerHTML = '';
 
         sites.forEach(site => {
 
@@ -349,9 +316,7 @@
 
             const localDesc = escapeHTML(site[`description_${currentLang}`] || site.description);
 
-
-
-            const card = document.createElement('div');
+const card = document.createElement('div');
 
             card.className = 'card';
 
@@ -397,9 +362,7 @@
 
     }
 
-
-
-    function removeFromList(id, btn) {
+function removeFromList(id, btn) {
 
         let myList = [];
 
@@ -417,9 +380,7 @@
 
     }
 
-
-
-    function copyShareLink() {
+function copyShareLink() {
 
         let myList = [];
 
@@ -435,9 +396,7 @@
 
     }
 
-
-
-    function clearList() {
+function clearList() {
 
         if (!confirm('Clear your entire list?')) return;
 
@@ -447,31 +406,9 @@
 
     }
 
-
-
-    document.addEventListener('DOMContentLoaded', loadMyList);
+document.addEventListener('DOMContentLoaded', loadMyList);
 
 </script>
-
-
-
-
-
-    
-
-    
-
-    
-
-    
-
-
-
-    
-
-    <!-- Amazon Affiliate Ads Engine -->
-
-    
 
 </body>
 

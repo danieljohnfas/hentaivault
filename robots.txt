@@ -1,7 +1,6 @@
 User-agent: *
 Allow: /
 Allow: /api/sites
-Allow: /api/config
 Allow: /api/site-of-the-day
 Allow: /api/trending
 Allow: /api/site-count

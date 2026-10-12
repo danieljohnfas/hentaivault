@@ -11,10 +11,10 @@
  *   TURNSTILE_SECRET_KEY — optional; when set, /api/submit and reviews verify
  *                          Cloudflare Turnstile tokens (see verifyHuman)
  *   INDEXNOW_KEY         — optional, enables IndexNow pings for new listings
- *   AD_KEY_*             — optional, served by /api/config
  */
 
 import { isMinorSafe, isListingVisible, PROHIBITED_TERMS } from './prohibited.js';
+import { affiliateUrlFor } from './affiliates.js';
 import {
   CATEGORIES, normalizeCategory, categoryVariants,
   isSafeHttpUrl, isSiteUp, parseTags, isIndexable, SITEMAP_STATIC_PAGES, MIN_INDEXABLE_RATING,
@@ -37,7 +37,11 @@ const NOT_PROHIBITED_SQL = '(' + PROHIBITED_TERMS
 // guard above only knows the plain terms; the sweep removes the rest within hours).
 const visibleSites = rows => rows
   .map(r => { try { return JSON.parse(r.data_json); } catch { return null; } })
-  .filter(isListingVisible);
+  .filter(isListingVisible)
+  .map(site => {
+    const affiliate = affiliateUrlFor(site.url);
+    return affiliate ? { ...site, affiliate_url: affiliate } : site;
+  });
 
 function escapeHTML(str) {
   if (str === null || str === undefined) return '';
@@ -277,7 +281,7 @@ class ReviewBodyHandler {
 
     const isUp = isSiteUp(site);
     const siteId = escapeHTML(encodeURIComponent(site.id));
-    const siteUrl = escapeHTML(site.url);
+    const siteUrl = escapeHTML(site.affiliate_url || site.url);
     const stars = rating ? '★'.repeat(Math.floor(rating)) + (rating % 1 >= 0.5 ? '½' : '') : '';
     const pros = Array.isArray(site.pros) ? site.pros : [];
     const cons = Array.isArray(site.cons) ? site.cons : [];
@@ -1010,36 +1014,6 @@ async function handleRequest(request, env, ctx) {
       }
     }
 
-    // ── Route: /api/config ──────────────────────────────────────────────────
-    // Guard: only serve ad config to same-site requests (Referer or Origin must
-    // match hentaivault.me). Bare curl / scrapers get a 403.
-    if (url.pathname === '/api/config') {
-      if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: CORS });
-      }
-      const referer = request.headers.get('Referer') || '';
-      const origin  = request.headers.get('Origin')  || '';
-      const isInternal = referer.includes('hentaivault.me') || origin.includes('hentaivault.me');
-      if (!isInternal) {
-        return new Response(JSON.stringify({ error: 'Forbidden' }), {
-          status: 403, headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      // Keys are loaded from environment; no hardcoded fallbacks in source.
-      return new Response(
-        JSON.stringify({
-          ad_skyscraper:    env.AD_KEY_SKYSCRAPER    || '',
-          ad_leaderboard:   env.AD_KEY_LEADERBOARD   || '',
-          ad_infeed:        env.AD_KEY_INFEED         || '',
-          ad_sticky_bottom: env.AD_KEY_STICKY_BOTTOM  || '',
-          ad_socialbar:     env.AD_KEY_SOCIALBAR      || '',
-          ad_popunder:      env.AD_KEY_POPUNDER       || '',
-          ad_native:        env.AD_KEY_NATIVE         || ''
-        }),
-        { status: 200, headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store' } }
-      );
-    }
-
     // ── Route: /api/reviews ────────────────────────────────────────────────
     if (url.pathname === '/api/reviews') {
       if (request.method === 'OPTIONS') {
@@ -1621,7 +1595,7 @@ async function handleRequest(request, env, ctx) {
       if (env.hv_directory) {
         try {
           const row = await env.hv_directory.prepare(`SELECT url, data_json FROM sites WHERE id = ? AND ${NOT_PROHIBITED_SQL}`).bind(id).first();
-          if (row && isSafeHttpUrl(row.url) && visibleSites([row]).length) site = { url: row.url };
+          if (row && isSafeHttpUrl(row.url) && visibleSites([row]).length) site = { url: affiliateUrlFor(row.url) || row.url };
         } catch (e) {}
       }
       if (!site) return notFoundPage(env, url, 410);

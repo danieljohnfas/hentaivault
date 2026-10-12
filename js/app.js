@@ -35,11 +35,6 @@ window.escapeHTML = window.escapeHTML || ((str) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Fetch Ad Configuration dynamically in the background
-    fetch('/api/config')
-        .then(res => res.ok ? res.json() : null)
-        .then(data => { if (data) window.adConfig = data; })
-        .catch(e => console.error("Failed to load ad config", e));
 
 
 
@@ -877,12 +872,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // In-feed ad HTML (uses existing leaderboard ad key for in-feed placement)
-    const IN_FEED_AD_HTML = `
-        <div class="in-feed-ad" aria-hidden="true">
-            <script>atOptions = {'key':'40d623b6e8e7efa7651f8c6fbeb29bef','format':'iframe','height':90,'width':728,'params':{}}<\/script>
-            </div>`;
-
     function renderSites(batch, append = false, apiTotal = null) {
         if (!append) siteGrid.innerHTML = '';
 
@@ -954,6 +943,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // No animation delay — prevents cards sitting at opacity:0
             // Tracking & Linkbacks
             const trackedUrl = (() => {
+                if (site.affiliate_url) return site.affiliate_url;
                 try {
                     const u = new URL(site.url);
                     u.searchParams.set('utm_source', 'hentaivault.me');

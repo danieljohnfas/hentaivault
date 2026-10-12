@@ -1,20 +1,10 @@
 {
-  "totalFiles": 31,
+  "totalFiles": 35,
   "missingFooter": [
-    "embed.html",
-    "out.html"
+    "memevault\\index.html"
   ],
-  "missingAdSlots": {
-    "embed.html": [
-      "native_banner"
-    ],
-    "out.html": [
-      "native_banner"
-    ]
-  },
-  "rogueAds": [],
+  "adNetworkCode": [],
   "seoIssues": [
     "blog\\best-doujin-sites-2026.html (Missing meta description)"
-  ],
-  "potentialAdAreas": []
+  ]
 }

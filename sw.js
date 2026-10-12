@@ -1,7 +1,7 @@
 // HentaiVault Service Worker
 // Cache-first for static assets, network-first for HTML pages
 
-const CACHE_NAME = 'hv-cache-v5'; // bump on every deploy that changes JS/CSS
+const CACHE_NAME = 'hv-cache-v6'; // bump on every deploy that changes JS/CSS
 const STATIC_ASSETS = [
     '/',
     '/index.html',
@@ -12,21 +12,16 @@ const STATIC_ASSETS = [
     '/manifest.json'
 ];
 
-// Ad domains — never cache these, always fresh
-const AD_DOMAINS = [
-    'revolthem.com',
-    'pl29414985.profitablecpmratenetwork.com',
-    'pl29414982.profitablecpmratenetwork.com',
-    'pl29414983.profitablecpmratenetwork.com',
+// Third-party domains — never cache these, always fresh
+const NO_CACHE_DOMAINS = [
     'googletagmanager.com',
     'challenges.cloudflare.com',
     'hitscounter.dev',
-    'api.qrserver.com',
-    'highperformanceformat.com'
+    'api.qrserver.com'
 ];
 
-function isAdRequest(url) {
-    return AD_DOMAINS.some(domain => url.hostname.includes(domain));
+function isNoCacheRequest(url) {
+    return NO_CACHE_DOMAINS.some(domain => url.hostname.includes(domain));
 }
 
 // Install: pre-cache core static assets
@@ -61,7 +56,7 @@ self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
     if (url.pathname.startsWith('/api/')) return; // Don't cache dynamic API requests
-    if (isAdRequest(url)) return; // Let ads fall through to network without caching
+    if (isNoCacheRequest(url)) return; // Let third-party requests go to the network without caching
 
     const isHTML = event.request.headers.get('accept')?.includes('text/html') ||
                    url.pathname.endsWith('.html') ||

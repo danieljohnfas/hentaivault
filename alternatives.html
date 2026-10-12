@@ -4,9 +4,7 @@
 
 <head>
 
-
-
-    <!-- Google Analytics -->
+<!-- Google Analytics -->
 
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-VF4RKFXMFB"></script>
 
@@ -22,9 +20,7 @@
 
     </script>
 
-
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -238,12 +234,6 @@
 
         </div>
 
-    
-
-    <!-- Amazon Affiliate Inline Ad -->
-
-    <div class="hv-amazon-inline-slot"></div>
-
 </main>
 
     <script>
@@ -324,9 +314,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             let descText = `Looking for sites like ${localName}? Here are the top rated ${localCat} alternatives for 2026 with high quality and active communities.`;
 
-            
-
-            if (currentLang === 'fr') {
+if (currentLang === 'fr') {
 
                 titleText = `12 Meilleures Alternatives à ${localName} en 2026 | HentaiVault`;
 
@@ -352,9 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             document.getElementById('pageDesc').textContent = `Looking for sites like ${localName}? We analyzed our directory to bring you the top rated ${localCat} sites.`;
 
-            
-
-            // Function helpers to set metadata
+// Function helpers to set metadata
 
             const setMeta = (name, val) => {
 
@@ -390,9 +376,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             setMeta('twitter:description', descText);
 
-
-
-            // Fetch Alternatives
+// Fetch Alternatives
 
             let alternatives = [];
 
@@ -414,15 +398,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             }
 
-
-
-            const altGrid = document.getElementById('alternativesGrid');
+const altGrid = document.getElementById('alternativesGrid');
 
             altGrid.innerHTML = ''; // clear loading
 
-            
-
-            alternatives.forEach(s => {
+alternatives.forEach(s => {
 
                 const sUrl = new URL(s.url);
 
@@ -432,9 +412,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const sLocalCat = (t.categories && t.categories[s.category]) ? t.categories[s.category] : s.category;
 
-                
-
-                const card = document.createElement('div');
+const card = document.createElement('div');
 
                 card.className = 'card';
 
@@ -650,26 +628,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
 
     </footer>
-
-
-
-
-
-    
-
-    
-
-    
-
-    
-
-
-
-    
-
-    <!-- Amazon Affiliate Ads Engine -->
-
-    
 
 </body>
 

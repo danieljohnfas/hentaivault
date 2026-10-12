@@ -57,3 +57,7 @@ memevault
 
 # Local-only archive
 _archive
+
+# Service-account keys and other credentials (never public)
+gsc-credentials.json
+*credentials*.json
