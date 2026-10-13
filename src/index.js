@@ -125,22 +125,22 @@ const CORS = {
 // D1 handles all backend queries to respect the 10ms CPU limit.
 
 class HeadHandler {
-  constructor(site, canonicalUrl, lang, indexable) {
+  constructor(site, canonicalUrl, lang, indexable, pageTitle) {
     this.site = site;
     this.canonicalUrl = canonicalUrl;
     this.lang = lang;
     this.indexable = indexable;
+    this.pageTitle = pageTitle;
   }
   element(element) {
     const site = this.site;
-    const title = `${site.name} Review | HentaiVault`;
+    const title = this.pageTitle || `${site.name} Review, Mirror Status & Alternatives (2026) | HentaiVault`;
     const rating = Number(site.rating) > 0 ? Number(site.rating) : null;
     const category = normalizeCategory(site.category);
     const metaDesc = [
-      `${site.name}: ${category || 'site'} review on HentaiVault.`,
-      rating ? `Rated ${rating}/5.` : '',
-      isSiteUp(site) ? '' : 'Currently offline.',
-      site.description || '',
+      `${site.name} review & safety rating on HentaiVault${rating ? ` (${rating}/5)` : ''}.`,
+      isSiteUp(site) ? 'Verified working & online.' : 'Currently offline/reported.',
+      site.description ? site.description : `Explore ${site.name} mirror links, features, safety ratings, and top ${category} alternatives.`,
     ].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim().slice(0, 160);
     const desc = (site.description || metaDesc).slice(0, 300);
 
@@ -151,7 +151,7 @@ class HeadHandler {
       `<meta property="og:description" content="${escapeHTML(desc)}">`,
       `<meta property="og:url" content="${escapeHTML(this.canonicalUrl)}">`,
       `<meta property="og:type" content="article">`,
-      `<meta name="twitter:card" content="summary">`,
+      `<meta name="twitter:card" content="summary_large_image">`,
       `<meta name="twitter:title" content="${escapeHTML(title)}">`,
       `<meta name="twitter:description" content="${escapeHTML(desc)}">`,
     ];
@@ -178,6 +178,9 @@ class HeadHandler {
     if (rating) {
       graph.push({
         "@type": "Review",
+        "headline": `${site.name} Review & Mirror Status`,
+        "datePublished": "2026-05-01",
+        "dateModified": "2026-10-13",
         "itemReviewed": { "@type": "WebSite", "name": site.name, "url": site.url },
         "reviewRating": { "@type": "Rating", "ratingValue": rating, "bestRating": 5, "worstRating": 1 },
         "author": { "@id": "https://hentaivault.me/#organization" },
@@ -1561,11 +1564,12 @@ async function handleRequest(request, env, ctx) {
 
       const canonicalUrl = `https://hentaivault.me/site?id=${encodeURIComponent(site.id)}`;
       const indexable = isIndexable(site);
+      const pageTitle = `${site.name} Review, Mirror Status & Alternatives (2026) | HentaiVault`;
       const rewriter = new HTMLRewriter()
         .on('link[rel="canonical"]', new CanonicalRemover())
         .on('meta[name="description"]', new CanonicalRemover())
-        .on('title', new TitleHandler(`${site.name} Review | HentaiVault`))
-        .on('head', new HeadHandler(site, canonicalUrl, effectiveLang, indexable))
+        .on('title', new TitleHandler(pageTitle))
+        .on('head', new HeadHandler(site, canonicalUrl, effectiveLang, indexable, pageTitle))
         .on('div#reviewContent', new ReviewBodyHandler(site, effectiveLang, relatedSites));
 
       return withHeaders(rewriter.transform(response), {
