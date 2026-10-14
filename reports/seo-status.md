@@ -1,5 +1,5 @@
 # 🤖 HentaiVault SEO Auto-Monitor Report
-_Last run: 2026-10-14 16:56:24 UTC • Live mode_
+_Last run: 2026-10-14 21:29:01 UTC • Live mode_
 
 ---
 
@@ -7,22 +7,23 @@ _Last run: 2026-10-14 16:56:24 UTC • Live mode_
 | Metric | Value |
 |---|---|
 | Total Clicks | **9** |
-| Total Impressions | **33** |
-| Average CTR | **27.27%** |
-| Average Position | **42.5** |
+| Total Impressions | **36** |
+| Average CTR | **25.00%** |
+| Average Position | **32.4** |
 
 ## 📅 Week-over-Week Trend
 | Metric | This Week | Last Week | Change |
 |---|---|---|---|
 | Clicks | 9 | 8 | 📈 +1 |
-| Impressions | 33 | 39 | 📉 -6 |
+| Impressions | 36 | 39 | 📉 -3 |
 
 ## 🔍 Top 10 Queries by Clicks
 | Query | Clicks | Impressions | CTR | Position |
 |---|---|---|---|---|
-| `hentaivault` | 9 | 31 | 29.03% | 2.4 |
+| `hentaivault` | 9 | 33 | 27.27% | 2.5 |
 | `hentai vault` | 0 | 1 | 0.00% | 55.0 |
 | `hentaivteca` | 0 | 1 | 0.00% | 70.0 |
+| `hintai vault` | 0 | 1 | 0.00% | 2.0 |
 
 ## ⚠️ Issues Detected
 _No critical issues detected this run._
