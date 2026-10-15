@@ -33,4 +33,4 @@ Disallow: /out
 Disallow: /embed
 Disallow: /*?*
 
-Sitemap: https://hentaivault.me/sitemap.xml
+Sitemap: https://hentaivault.me/sitemap-index.xml

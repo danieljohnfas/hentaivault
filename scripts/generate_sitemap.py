@@ -91,6 +91,9 @@ def generate():
         "best-doujin-sites-2026",
         "free-manga-guide",
         "best-streaming-2026",
+        "hentai-apps-guide-2026",
+        "top-10-sites-may-2026",
+        "uncensored-streaming-guide-2026",
     ]
 
     lines = ['<?xml version="1.0" encoding="UTF-8"?>']
