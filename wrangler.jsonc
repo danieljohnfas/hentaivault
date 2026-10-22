@@ -9,7 +9,18 @@
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
-    "run_worker_first": true
+    "run_worker_first": [
+      "/*",
+      "!/js/*",
+      "!/css/*",
+      "!/assets/*",
+      "!/favicon.ico",
+      "!/apple-touch-icon*.png",
+      "!/sw.js",
+      "!/manifest.json",
+      "!/robots.txt",
+      "!/llms.txt"
+    ]
   },
   "compatibility_flags": [
     "nodejs_compat"
