@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 trendingShelf.innerHTML = sites.map(s => `
                     <a href="/site?id=${s.id}" style="display:flex; flex-direction:column; align-items:center; min-width:90px; max-width:90px; text-align:center; text-decoration:none; gap:6px;">
                         <div style="position:relative;">
-                            <img src="https://icons.duckduckgo.com/ip3/${new URL(s.url).hostname}.ico" alt="${window.escapeHTML(s.name)} icon" style="width:52px;height:52px;border-radius:14px;background:var(--bg-surface);padding:4px;box-shadow:0 0 12px rgba(255,42,95,0.3);border:1px solid rgba(255,42,95,0.3);" loading="lazy">
+                            <img src="https://icons.duckduckgo.com/ip3/${new URL(s.url).hostname}.ico" alt="${window.escapeHTML(s.name)} icon" style="width:52px;height:52px;border-radius:14px;background:var(--bg-surface);padding:4px;box-shadow:0 0 12px rgba(255,42,95,0.3);border:1px solid rgba(255,42,95,0.3);" loading="lazy" onerror="this.onerror=null;this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23fe2c55%22 stroke-width=%222%22><circle cx=%2212%22 cy=%2212%22 r=%2210%22/><path d=%22M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20%22/><path d=%22M2 12h20%22/></svg>';">
                             <span style="position:absolute;top:-6px;right:-6px;font-size:0.75rem;">🔥</span>
                         </div>
                         <span style="font-size:0.72rem;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:88px;">${window.escapeHTML(s.name)}</span>
@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (recentSites.length > 0) {
                         recentShelf.innerHTML = recentSites.map(site => `
                             <a href="/site?id=${site.id}" style="display:flex; flex-direction:column; align-items:center; min-width: 80px; text-align:center; text-decoration:none; gap:6px; transition:transform 0.2s;">
-                                <img src="https://icons.duckduckgo.com/ip3/${new URL(site.url).hostname}.ico" alt="" loading="lazy" decoding="async" style="width:48px; height:48px; border-radius:12px; background:var(--bg-surface); padding:4px; box-shadow:var(--shadow-glass);">
+                                <img src="https://icons.duckduckgo.com/ip3/${new URL(site.url).hostname}.ico" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23fe2c55%22 stroke-width=%222%22><circle cx=%2212%22 cy=%2212%22 r=%2210%22/><path d=%22M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20%22/><path d=%22M2 12h20%22/></svg>';" style="width:48px; height:48px; border-radius:12px; background:var(--bg-surface); padding:4px; box-shadow:var(--shadow-glass);">
                                 <span style="font-size:0.75rem; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:80px;">${escapeHTML(site.name)}</span>
                             </a>
                         `).join('');
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!sites || sites.length === 0) return;
                 forYouShelf.innerHTML = sites.map(s => `
                     <a href="/site?id=${s.id}" style="display:flex;flex-direction:column;align-items:center;min-width:90px;max-width:90px;text-align:center;text-decoration:none;gap:6px;">
-                        <img src="https://icons.duckduckgo.com/ip3/${new URL(s.url).hostname}.ico" alt="${window.escapeHTML(s.name)} icon" style="width:52px;height:52px;border-radius:14px;background:var(--bg-surface);padding:4px;box-shadow:var(--shadow-glass);" loading="lazy">
+                        <img src="https://icons.duckduckgo.com/ip3/${new URL(s.url).hostname}.ico" alt="${window.escapeHTML(s.name)} icon" style="width:52px;height:52px;border-radius:14px;background:var(--bg-surface);padding:4px;box-shadow:var(--shadow-glass);" loading="lazy" onerror="this.onerror=null;this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23fe2c55%22 stroke-width=%222%22><circle cx=%2212%22 cy=%2212%22 r=%2210%22/><path d=%22M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20%22/><path d=%22M2 12h20%22/></svg>';">
                         <span style="font-size:0.72rem;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:88px;">${window.escapeHTML(s.name)}</span>
                     </a>`).join('');
                 forYouContainer.style.display = 'block';
