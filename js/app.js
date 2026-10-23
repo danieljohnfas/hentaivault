@@ -474,16 +474,39 @@ document.addEventListener('DOMContentLoaded', () => {
         initFilters();
     }
 
-    // --- Click Tracking (Social Proof engine) ---
-    // Delegate on document so it captures dynamically injected .btn-visit-tracked links
+    // --- Click Tracking & Affiliate Conversion Monitoring ---
+    // Delegate on document so it captures directory cards and partner links
     document.addEventListener('click', (e) => {
+        // A. Directory item click tracking
         const link = e.target.closest('.btn-visit-tracked');
         if (link) {
             const id = link.dataset.id;
             if (id) {
-                // Non-blocking, fire and forget
                 fetch('/api/click', { method: 'POST', body: JSON.stringify({ id }), headers: { 'Content-Type': 'application/json' } }).catch(() => {});
             }
+        }
+
+        // B. PureVPN and pCloud Outbound Affiliate Conversion Monitoring
+        const affLink = e.target.closest('a[data-affiliate-partner], a[href*="billing.purevpn.com"], a[href*="partner.pcloud.com"]');
+        if (affLink) {
+            const href = affLink.href || '';
+            const partner = affLink.dataset.affiliatePartner || (/purevpn/i.test(href) ? 'purevpn' : /pcloud/i.test(href) ? 'pcloud' : 'partner');
+            const slot = affLink.dataset.affiliateSlot || (affLink.closest('header, nav') ? 'navbar' : affLink.closest('#topShowcase, .banner') ? 'banner' : 'inline');
+            const payload = JSON.stringify({ partner, slot, url: href, page: location.pathname });
+
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon('/api/affiliate-click', new Blob([payload], { type: 'text/plain;charset=UTF-8' }));
+            } else {
+                fetch('/api/affiliate-click', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+            }
+
+            try {
+                let stats = JSON.parse(localStorage.getItem('hv_aff_stats') || '{}');
+                stats[partner] = (stats[partner] || 0) + 1;
+                stats[partner + '_' + slot] = (stats[partner + '_' + slot] || 0) + 1;
+                stats.last_click = { partner, slot, time: new Date().toISOString() };
+                localStorage.setItem('hv_aff_stats', JSON.stringify(stats));
+            } catch (_) {}
         }
     });
 

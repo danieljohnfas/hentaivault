@@ -1375,6 +1375,123 @@ async function handleRequest(request, env, ctx) {
       }
     }
 
+    // ── Route: /api/affiliate-click (Conversion Tracking for PureVPN & pCloud) ─
+    if (url.pathname === '/api/affiliate-click') {
+      if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+
+      let partner = url.searchParams.get('partner') || '';
+      let slot = url.searchParams.get('slot') || 'unknown';
+      let targetUrl = url.searchParams.get('to') || url.searchParams.get('url') || '';
+      let referer = request.headers.get('referer') || '';
+      const country = request.cf?.country || '';
+
+      if (request.method === 'POST') {
+        try {
+          const body = await request.json().catch(() => ({}));
+          partner = body.partner || partner || '';
+          slot = body.slot || slot || 'unknown';
+          targetUrl = body.url || targetUrl || '';
+          referer = body.page || referer || '';
+        } catch (_) {}
+      }
+
+      // Normalize partner identifier
+      if (!partner) {
+        if (/purevpn/i.test(targetUrl)) partner = 'purevpn';
+        else if (/pcloud/i.test(targetUrl)) partner = 'pcloud';
+        else partner = 'partner';
+      }
+
+      if (env.hv_directory) {
+        try {
+          await env.hv_directory.prepare(
+            'INSERT INTO affiliate_clicks (partner, slot, target_url, referer, country) VALUES (?, ?, ?, ?, ?)'
+          ).bind(partner, slot, targetUrl, referer, country).run();
+        } catch (e) {
+          // Auto-initialize table if not yet migrated
+          try {
+            await env.hv_directory.prepare(
+              'CREATE TABLE IF NOT EXISTS affiliate_clicks (' +
+                'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
+                'partner TEXT NOT NULL, ' +
+                'slot TEXT NOT NULL, ' +
+                'target_url TEXT NOT NULL, ' +
+                'referer TEXT, ' +
+                'country TEXT, ' +
+                'created_at TEXT DEFAULT (datetime(\'now\')) NOT NULL' +
+              ');'
+            ).run();
+            await env.hv_directory.prepare(
+              'INSERT INTO affiliate_clicks (partner, slot, target_url, referer, country) VALUES (?, ?, ?, ?, ?)'
+            ).bind(partner, slot, targetUrl, referer, country).run();
+          } catch (_) {}
+        }
+      }
+
+      // Interstitial redirect fallback for GET links
+      if (request.method === 'GET' && targetUrl && isSafeHttpUrl(targetUrl)) {
+        return Response.redirect(targetUrl, 302);
+      }
+
+      return new Response(JSON.stringify({ success: true, partner, slot }), {
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ── Route: /api/affiliate-stats (Real-Time Partner Conversion Reporting) ───
+    if (url.pathname === '/api/affiliate-stats') {
+      if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+      if (!env.hv_directory) return jsonError('DB not configured', 500);
+
+      try {
+        const rows = await env.hv_directory.prepare(
+          'SELECT partner, slot, COUNT(*) as clicks, MAX(created_at) as last_click_at ' +
+          'FROM affiliate_clicks GROUP BY partner, slot ORDER BY clicks DESC'
+        ).all();
+
+        const totals = await env.hv_directory.prepare(
+          'SELECT partner, COUNT(*) as total_clicks FROM affiliate_clicks GROUP BY partner'
+        ).all();
+
+        const recent = await env.hv_directory.prepare(
+          'SELECT partner, slot, country, created_at FROM affiliate_clicks ORDER BY id DESC LIMIT 15'
+        ).all();
+
+        return new Response(JSON.stringify({
+          success: true,
+          partners: {
+            purevpn: {
+              active: true,
+              affiliate_url: 'https://billing.purevpn.com/aff.php?aff=49387845',
+              total_clicks: (totals.results || []).find(r => r.partner === 'purevpn')?.total_clicks || 0,
+            },
+            pcloud: {
+              active: true,
+              affiliate_url: 'https://partner.pcloud.com/r/156786',
+              total_clicks: (totals.results || []).find(r => r.partner === 'pcloud')?.total_clicks || 0,
+            },
+          },
+          breakdown: rows.results || [],
+          recent_clicks: recent.results || [],
+        }), {
+          headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({
+          success: true,
+          partners: {
+            purevpn: { active: true, affiliate_url: 'https://billing.purevpn.com/aff.php?aff=49387845', total_clicks: 0 },
+            pcloud: { active: true, affiliate_url: 'https://partner.pcloud.com/r/156786', total_clicks: 0 },
+          },
+          breakdown: [],
+          recent_clicks: [],
+          note: 'No click events recorded yet',
+        }), {
+          headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // ── Route: /api/trending ────────────────────────────────────────────────
     if (url.pathname === '/api/trending') {
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
