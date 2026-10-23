@@ -2,9 +2,16 @@ name: 🩺 Daily Deadlink Checker
 
 on:
   schedule:
-    # Runs every day at 08:00 UTC
-    - cron: '0 8 * * *'
+    # Runs every day at 08:15 UTC (staggered off top-of-hour)
+    - cron: '15 8 * * *'
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-deadlink
+  cancel-in-progress: false
 
 jobs:
   deadlink-check:

@@ -4,10 +4,14 @@ on:
   workflow_dispatch: {}
   schedule:
     # Run every Sunday at 08:00 UTC for a weekly full report
-    - cron: '0 8 * * 0'
+    - cron: '5 9 * * 0'
 
 permissions:
   contents: write
+
+concurrency:
+  group: analytics-pull
+  cancel-in-progress: false
 
 jobs:
   analytics-pull:
@@ -61,9 +65,10 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
+            git pull --rebase origin main 2>/dev/null || true
             DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
             git commit -m "📊 analytics: full multi-source report [$DATE]"
-            git push
+            git push origin main
             echo "✅ Report committed and pushed"
           fi
 

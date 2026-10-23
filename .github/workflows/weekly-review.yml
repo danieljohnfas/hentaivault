@@ -3,14 +3,12 @@ name: 📊 Weekly Health & Security Review
 on:
   schedule:
     # Every Sunday at 08:00 UTC (11:00 AM Riyadh/Istanbul time)
-    - cron: '0 8 * * 0'
-  workflow_dispatch:
-    inputs:
-      post_to_discord:
-        description: 'Post summary to Discord webhook'
-        required: false
-        default: 'true'
-        type: boolean
+    - cron: '35 8 * * 0'
+  workflow_dispatch: {}
+
+concurrency:
+  group: weekly-review
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -373,36 +371,16 @@ jobs:
       - name: Commit report to repository
         run: |
           git add reports/
-          git diff --cached --quiet && echo "No report changes." || \
+          if git diff --cached --quiet; then
+            echo "No report changes."
+          else
+            git pull --rebase origin main 2>/dev/null || true
             git commit -m "chore(review): weekly health report [$(date -u '+%Y-%m-%d')]"
-          git push
+            git push origin main
+          fi
 
-      # ── 9. Discord notification (optional) ───────────────────────────────
-      - name: Post summary to Discord
-        if: ${{ (github.event.inputs.post_to_discord != 'false') && env.DISCORD_WEBHOOK != '' }}
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: |
-          DATE=$(date -u '+%Y-%m-%d')
-          # Build a short Discord embed from the report
-          SUMMARY=$(head -60 /tmp/final_report.md | sed 's/`//g' | sed 's/\*\*//g' | sed 's/^#* //' | head -40)
-          PAYLOAD=$(node -e "
-            const summary = \`$SUMMARY\`.substring(0, 1800);
-            const payload = {
-              username: 'HentaiVault Bot',
-              embeds: [{
-                title: '📊 Weekly Health Report — $DATE',
-                description: summary + '\n\n[View Full Report](https://github.com/${{ github.repository }}/blob/main/reports/latest-review.md)',
-                color: 0x7c3aed,
-                footer: { text: 'HentaiVault Weekly Review' },
-                timestamp: new Date().toISOString()
-              }]
-            };
-            console.log(JSON.stringify(payload));
-          ")
-          curl -s -H "Content-Type: application/json" \
-            -d "$PAYLOAD" \
-            "$DISCORD_WEBHOOK" || echo "Discord notification failed (non-fatal)"
+      # ── 9. Discord notification (DISABLED) ───────────────────────────────
+      # Note: Discord notifications have been disabled per user instruction.
 
       - name: Review complete summary
         if: always()

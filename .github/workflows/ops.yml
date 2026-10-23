@@ -5,7 +5,7 @@ name: 🛠️ Ops (one-off production tasks)
 on:
   workflow_dispatch: {}
   push:
-    branches: ['claude/**', 'main']
+    branches: [main]
     paths:
       - 'ops/tasks.json'
 
