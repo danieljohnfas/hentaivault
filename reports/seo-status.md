@@ -1,5 +1,5 @@
 # 🤖 HentaiVault SEO Auto-Monitor Report
-_Last run: 2026-10-22 21:23:31 UTC • Live mode_
+_Last run: 2026-10-23 04:16:36 UTC • Live mode_
 
 ---
 
@@ -15,7 +15,7 @@ _Last run: 2026-10-22 21:23:31 UTC • Live mode_
 | Metric | This Week | Last Week | Change |
 |---|---|---|---|
 | Clicks | 13 | 9 | 📈 +4 |
-| Impressions | 40 | 36 | 📈 +4 |
+| Impressions | 40 | 34 | 📈 +6 |
 
 ## 🔍 Top 10 Queries by Clicks
 | Query | Clicks | Impressions | CTR | Position |
