@@ -13,6 +13,7 @@ jobs:
   analytics-pull:
     name: Pull All Analytics Data
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository

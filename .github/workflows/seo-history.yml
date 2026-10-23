@@ -13,6 +13,7 @@ jobs:
   history:
     name: Pull & Analyse Full GSC History
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository

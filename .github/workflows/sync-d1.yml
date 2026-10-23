@@ -12,6 +12,7 @@ jobs:
     if: false # DISABLED — see header comment above
     name: Sync data.js to Cloudflare D1
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 

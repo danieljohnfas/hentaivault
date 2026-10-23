@@ -10,6 +10,7 @@ jobs:
   deadlink-check:
     name: Check & Remove Dead Links
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository

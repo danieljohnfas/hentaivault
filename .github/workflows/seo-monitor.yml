@@ -25,6 +25,7 @@ jobs:
   seo-monitor:
     name: SEO Monitor & Auto-Fix
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       # ── 0. Checkout ─────────────────────────────────────────────────────────
