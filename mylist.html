@@ -103,12 +103,34 @@
             <button onclick="copyShareLink()" class="btn-outline" style="padding: 10px 20px;">🔗 Share This List</button>
 
             <button onclick="clearList()" class="btn-outline" style="padding: 10px 20px; border-color: #ff2a5f; color: #ff2a5f;">🗑️ Clear All</button>
+            <button onclick="exportBookmarksJson()" class="btn-outline" style="padding: 10px 20px;">📥 Export JSON</button>
+            <button onclick="document.getElementById('importFile').click()" class="btn-outline" style="padding: 10px 20px;">📤 Import JSON</button>
+            <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importBookmarksJson(event)">
 
         </div>
 
     </div>
 
-<div id="myListGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+<!-- pCloud 10TB Lifetime Backup Banner -->
+    <div style="background: linear-gradient(135deg, rgba(0, 126, 229, 0.12) 0%, rgba(36, 59, 85, 0.25) 100%); border: 1px solid rgba(0, 126, 229, 0.35); border-radius: 14px; padding: 18px 24px; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <span style="font-size: 2rem;">☁️</span>
+            <div>
+                <div style="font-weight: 700; font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <span>Backup Your Offline Collection to pCloud 10TB</span>
+                    <span style="background: rgba(0, 126, 229, 0.2); color: #60a5fa; border: 1px solid rgba(0, 126, 229, 0.4); font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;">LIFETIME STORAGE</span>
+                </div>
+                <div style="font-size: 0.88rem; color: #a1a1aa; margin-top: 4px;">
+                    Store your entire doujinshi and anime archive forever with Swiss zero-knowledge encryption. Pay once, keep forever — no monthly fees.
+                </div>
+            </div>
+        </div>
+        <a href="https://partner.pcloud.com/r/156786" target="_blank" rel="sponsored noopener noreferrer" style="background: #007EE5; color: #fff; font-weight: 800; font-size: 0.88rem; padding: 10px 20px; border-radius: 8px; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
+            <span>Get 10TB Lifetime Deal &rarr;</span>
+        </a>
+    </div>
+
+    <div id="myListGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
 
         <div style="grid-column: 1/-1; text-align:center; padding: 60px; color: var(--text-muted);">
 
@@ -396,7 +418,43 @@ function copyShareLink() {
 
     }
 
-function clearList() {
+function exportBookmarksJson() {
+        let myList = [];
+        try { myList = JSON.parse(localStorage.getItem('hv_mylist') || '[]'); } catch(e) {}
+        const blob = new Blob([JSON.stringify(myList, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hentaivault-bookmarks-${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function importBookmarksJson(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (Array.isArray(imported)) {
+                    let existing = [];
+                    try { existing = JSON.parse(localStorage.getItem('hv_mylist') || '[]'); } catch(err) {}
+                    const merged = Array.from(new Set([...existing, ...imported]));
+                    localStorage.setItem('hv_mylist', JSON.stringify(merged));
+                    loadMyList();
+                    alert(`Successfully imported ${merged.length} bookmarks!`);
+                } else {
+                    alert('Invalid JSON bookmark format.');
+                }
+            } catch(err) {
+                alert('Failed to parse JSON file.');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function clearList() {
 
         if (!confirm('Clear your entire list?')) return;
 

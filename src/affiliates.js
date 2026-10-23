@@ -13,10 +13,21 @@ export const AFFILIATE_LINKS = {
 };
 
 export const VPN_PARTNER = {
-  name: 'NordVPN',
-  url: 'https://nordvpn.com/',
-  title: 'Bypass ISP Censorship & Unblock Sites',
-  description: 'Bypass ISP blocks and regional restrictions with ultra-fast servers & strict no logs.'
+  name: 'PureVPN',
+  url: 'https://billing.purevpn.com/aff.php?aff=49387845',
+  title: 'Bypass ISP Censorship & Unblock Every Site',
+  description: '6,500+ high-speed servers in 70+ countries. Zero logs, P2P allowed, unblock all manga & anime mirrors with 31-day money-back guarantee.',
+  badge: 'Recommended VPN'
+};
+
+export const PCLOUD_PARTNER = {
+  name: 'pCloud',
+  url: 'https://partner.pcloud.com/r/156786',
+  passUrl: 'https://partner.pcloud.com/r/156784',
+  businessUrl: 'https://partner.pcloud.com/r/156781',
+  title: '10TB Lifetime Cloud Storage — Pay Once, Keep Forever',
+  description: 'Store entire uncensored doujin & anime libraries safely with Swiss zero-knowledge privacy. No recurring monthly subscriptions.',
+  badge: 'Lifetime Deal'
 };
 
 export function affiliateUrlFor(siteUrl) {

@@ -1397,3 +1397,53 @@ window.subscribeDigest = async function(e) {
         statusEl.textContent = '📧 Send an email with subject "Subscribe" to digest@hentaivault.me';
     }
 };
+
+
+// 🔞 18+ Age Verification & Content Warning
+(function initAgeGate() {
+  if (typeof window === 'undefined') return;
+  try {
+    if (localStorage.getItem('hv_age_verified') === 'true') return;
+  } catch(e) { return; }
+
+  function showAgeModal() {
+    if (document.getElementById('hv-age-gate')) return;
+    const modal = document.createElement('div');
+    modal.id = 'hv-age-gate';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(10px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = `
+      <div style="background:#18181b;border:1px solid #27272a;max-width:480px;width:100%;border-radius:18px;padding:32px 28px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.8);color:#f4f4f5;font-family:inherit;">
+        <div style="font-size:3rem;margin-bottom:12px;">🔞</div>
+        <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:12px;color:#fff;">Age Verification Required</h2>
+        <p style="font-size:0.92rem;line-height:1.6;color:#a1a1aa;margin-bottom:24px;">
+          HentaiVault is an indexing directory for adult anime, manga, and doujinshi content. You must be at least <strong>18 years of age</strong> (or the legal age of majority in your jurisdiction) to browse this website.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button id="hv-age-confirm" style="background:#ff2a5f;color:#fff;border:none;padding:14px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;transition:transform 0.15s ease;">
+            I am 18 or Older — Enter
+          </button>
+          <button id="hv-age-decline" style="background:rgba(255,255,255,0.08);color:#a1a1aa;border:1px solid rgba(255,255,255,0.15);padding:12px;border-radius:10px;font-weight:600;font-size:0.9rem;cursor:pointer;">
+            I am Under 18 — Exit
+          </button>
+        </div>
+        <p style="font-size:0.75rem;color:#71717a;margin-top:18px;margin-bottom:0;">
+          By entering, you confirm you are 18+ and accept our Terms of Service & Privacy Policy.
+        </p>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('hv-age-confirm').addEventListener('click', () => {
+      try { localStorage.setItem('hv_age_verified', 'true'); } catch(e) {}
+      modal.remove();
+    });
+    document.getElementById('hv-age-decline').addEventListener('click', () => {
+      window.location.href = 'https://google.com';
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showAgeModal);
+  } else {
+    showAgeModal();
+  }
+})();
