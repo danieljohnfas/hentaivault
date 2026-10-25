@@ -1,5 +1,5 @@
 # 📊 HentaiVault — Full Multi-Source Analytics Report
-_Generated: 2026-10-18 12:23:10 UTC_
+_Generated: 2026-10-25 13:38:49 UTC_
 
 > Data pulled from: **Google Search Console** (GSC) · **Cloudflare Analytics** · **Google Analytics 4** (GA4)
 
@@ -11,55 +11,55 @@ _Organic search performance — clicks, impressions, CTR, position_
 ### 📅 Overview by Period
 | Period | Clicks | Impressions | CTR | Avg Position |
 |---|---|---|---|---|
-| Last 7 days  | **7** | 32 | 21.88% | 6.7 |
-| Last 28 days | **42** | 169 | 24.85% | 3.8 |
-| Last 90 days | **184** | 739 | 24.90% | 4.6 |
-| All time (16 mo) | **868** | 62,590 | 1.39% | 6.8 |
+| Last 7 days  | **12** | 52 | 23.08% | 4.8 |
+| Last 28 days | **43** | 167 | 25.75% | 4.7 |
+| Last 90 days | **177** | 695 | 25.47% | 4.8 |
+| All time (16 mo) | **880** | 62,640 | 1.40% | 6.8 |
 
 ### 📈 28-Day vs Previous 28-Day
 | Metric | Current 28d | Previous 28d | Change |
 |---|---|---|---|
-| Clicks      | 42      | 58      | 📉 -16 (-27.6%) |
-| Impressions | 169 | 254 | 📉 -85 (-33.5%) |
+| Clicks      | 43      | 50      | 📉 -7 (-14.0%) |
+| Impressions | 167 | 242 | 📉 -75 (-31.0%) |
 
 ### 🔝 Top 20 Queries (Last 28 Days)
 | # | Query | Clicks | Impressions | CTR | Position |
 |---|---|---|---|---|---|
-| 1 | `hentaivault` | 40 | 137 | 29.20% | 2.1 |
+| 1 | `hentaivault` | 41 | 148 | 27.70% | 2.7 |
 | 2 | `hentai aggregator` | 1 | 1 | 100.00% | 54.0 |
-| 3 | `hintai vault` | 1 | 26 | 3.85% | 3.0 |
-| 4 | `hebtai vault` | 0 | 1 | 0.00% | 1.0 |
-| 5 | `hentai vault` | 0 | 1 | 0.00% | 55.0 |
-| 6 | `hentaiteva` | 0 | 1 | 0.00% | 93.0 |
+| 3 | `hintai vault` | 1 | 12 | 8.33% | 2.9 |
+| 4 | `hentai vault` | 0 | 1 | 0.00% | 55.0 |
+| 5 | `hentaiteva` | 0 | 1 | 0.00% | 93.0 |
+| 6 | `hentaivm` | 0 | 1 | 0.00% | 68.0 |
 | 7 | `hentaivscc` | 0 | 1 | 0.00% | 8.0 |
 | 8 | `hentaivteca` | 0 | 1 | 0.00% | 70.0 |
+| 9 | `hintaivault` | 0 | 1 | 0.00% | 6.0 |
 
 ### 📄 Top 15 Pages (Last 28 Days)
 | Page | Clicks | Impressions | CTR | Position |
 |---|---|---|---|---|
-| `/` | 47 | 213 | 22.07% | 4.4 |
-| `/embed?id=ponegonski_mq6h3iji` | 0 | 1 | 0.00% | 2.0 |
+| `/` | 49 | 212 | 23.11% | 5.1 |
 
 ### 🌍 Top 10 Countries (GSC, Last 28 Days)
 | Country | Clicks | Impressions |
 |---|---|---|
 | usa | 12 | 31 |
-| fra | 3 | 5 |
-| mex | 3 | 7 |
-| bra | 2 | 7 |
+| mex | 5 | 11 |
+| arg | 2 | 4 |
 | col | 2 | 2 |
-| deu | 2 | 16 |
-| dza | 2 | 16 |
-| swe | 2 | 6 |
-| arg | 1 | 3 |
-| egy | 1 | 9 |
+| dza | 2 | 12 |
+| fra | 2 | 4 |
+| gbr | 2 | 9 |
+| nld | 2 | 5 |
+| rus | 2 | 6 |
+| swe | 2 | 7 |
 
 ### 📱 Device Breakdown (GSC, Last 28 Days)
 | Device | Clicks | Impressions | CTR | Position |
 |---|---|---|---|---|
-| MOBILE | 41 | 176 | 23.30% | 2.8 |
-| DESKTOP | 6 | 37 | 16.22% | 11.9 |
-| TABLET | 0 | 1 | 0.00% | 5.0 |
+| MOBILE | 40 | 176 | 22.73% | 3.3 |
+| DESKTOP | 8 | 34 | 23.53% | 14.5 |
+| TABLET | 1 | 2 | 50.00% | 4.0 |
 
 ---
 
@@ -69,23 +69,16 @@ _Raw server-level traffic — all bots, direct hits, API calls included_
 ### 📅 Traffic Overview
 | Metric | Last 30 Days | Last 52 Weeks (1 Year) |
 |---|---|---|
-| Total Requests | **97,633** | **0** |
-| Page Views | 38,190 | 0 |
-| Unique Visitors | 30,207 | 0 |
-| Bandwidth | 1.26 GB | 0.00 GB |
-| Threats Blocked | 🛡️ 670 | 🛡️ 0 |
-| Cache Hit Rate | 59.2% | 0% |
+| Total Requests | **97,508** | **0** |
+| Page Views | 37,102 | 0 |
+| Unique Visitors | 29,833 | 0 |
+| Bandwidth | 1.27 GB | 0.00 GB |
+| Threats Blocked | 🛡️ 259 | 🛡️ 0 |
+| Cache Hit Rate | 57.6% | 0% |
 
 ### 📆 Daily Traffic (Last 30 Days)
 | Date | Requests | Page Views | Unique Visitors | Threats | Cache Hit |
 |---|---|---|---|---|---|
-| 2026-09-19 | 2,509 | 815 | 744 | 29 | 44% |
-| 2026-09-20 | 3,423 | 1,014 | 969 | 17 | 40% |
-| 2026-09-21 | 8,248 | 2,826 | 1,065 | 425 | 65% |
-| 2026-09-22 | 3,486 | 1,697 | 1,416 | 12 | 59% |
-| 2026-09-23 | 2,350 | 863 | 620 | 12 | 51% |
-| 2026-09-24 | 1,450 | 768 | 722 | 5 | 65% |
-| 2026-09-25 | 2,393 | 750 | 620 | 5 | 51% |
 | 2026-09-26 | 2,158 | 979 | 705 | 2 | 72% |
 | 2026-09-27 | 2,705 | 1,930 | 1,684 | 1 | 81% |
 | 2026-09-28 | 5,182 | 3,169 | 2,320 | 1 | 71% |
@@ -108,31 +101,38 @@ _Raw server-level traffic — all bots, direct hits, API calls included_
 | 2026-10-15 | 1,672 | 765 | 828 | 5 | 64% |
 | 2026-10-16 | 3,148 | 1,429 | 794 | 1 | 66% |
 | 2026-10-17 | 1,909 | 660 | 736 | 6 | 49% |
-| 2026-10-18 | 1,199 | 364 | 403 | 2 | 51% |
+| 2026-10-18 | 2,716 | 764 | 736 | 12 | 53% |
+| 2026-10-19 | 5,731 | 3,288 | 1,098 | 7 | 70% |
+| 2026-10-20 | 3,491 | 1,037 | 943 | 10 | 47% |
+| 2026-10-21 | 5,234 | 893 | 811 | 24 | 24% |
+| 2026-10-22 | 1,842 | 691 | 716 | 4 | 56% |
+| 2026-10-23 | 2,522 | 683 | 705 | 45 | 41% |
+| 2026-10-24 | 2,099 | 741 | 826 | 3 | 57% |
+| 2026-10-25 | 1,588 | 533 | 560 | 2 | 63% |
 
 ### 🌍 Top 20 Countries (Cloudflare, Last 30 Days)
 | Country | Requests | Threats |
 |---|---|---|
-| US | 42,786 | 22 |
-| NL | 7,711 | 528 |
-| RU | 4,574 | 0 |
-| DE | 4,473 | 34 |
-| SG | 4,071 | 2 |
-| CN | 3,718 | 0 |
-| BE | 3,449 | 37 |
-| GB | 2,866 | 3 |
-| CA | 2,401 | 6 |
-| FR | 1,842 | 2 |
-| PL | 1,803 | 10 |
-| SA | 1,559 | 0 |
-| ID | 1,173 | 4 |
-| BR | 1,013 | 10 |
-| JP | 683 | 0 |
-| HK | 651 | 0 |
-| IN | 646 | 0 |
-| TZ | 640 | 0 |
-| KR | 612 | 10 |
-| IL | 519 | 0 |
+| US | 40,897 | 71 |
+| FR | 5,034 | 14 |
+| DE | 4,518 | 12 |
+| RU | 4,281 | 0 |
+| NL | 4,047 | 79 |
+| SG | 3,889 | 1 |
+| BE | 3,586 | 27 |
+| CN | 3,405 | 0 |
+| GB | 2,685 | 0 |
+| PL | 2,205 | 14 |
+| SA | 2,117 | 0 |
+| CA | 2,007 | 3 |
+| ID | 1,315 | 4 |
+| BR | 1,266 | 10 |
+| JP | 762 | 0 |
+| IN | 692 | 0 |
+| MX | 673 | 0 |
+| CL | 664 | 6 |
+| QA | 596 | 6 |
+| KR | 591 | 10 |
 
 ---
 
@@ -148,15 +148,15 @@ _What each data source tells us and how they align_
 
 | Metric | GSC (30d) | Cloudflare (30d) | GA4 (28d) | Notes |
 |---|---|---|---|---|
-| Clicks/Sessions | 42 clicks | — | N/A sessions | GSC = organic search only; GA4 = all sources |
-| Page Views | — | 38,190 server hits | N/A | CF includes bots; GA4 is human-only |
-| Impressions | 169 (SERP) | — | — | GSC measures Google search appearance |
+| Clicks/Sessions | 43 clicks | — | N/A sessions | GSC = organic search only; GA4 = all sources |
+| Page Views | — | 37,102 server hits | N/A | CF includes bots; GA4 is human-only |
+| Impressions | 167 (SERP) | — | — | GSC measures Google search appearance |
 
 ### 🎯 Key Insights
 - 🔴 **Brand dependency:** 95% of clicks are branded — the site hasn't broken into non-branded search yet
-- 🟢 **CTR is 24.9%** — strong for the queries we do rank for
+- 🟢 **CTR is 25.7%** — strong for the queries we do rank for
 - 📉 **Impressions are falling** — blog posts need fresher content signals to keep ranking
-- 🟡 **Cloudflare cache hit rate: 59%** — could be improved
+- 🟡 **Cloudflare cache hit rate: 58%** — could be improved
 - 🛡️ **N/A threats blocked** in last 30 days — security posture is healthy
 
 ---
