@@ -69,11 +69,86 @@ async function runJev(env, state, questions, timeoutMs) {
 }
 
 /**
+ * Mistral Shieldstral 1.0 — Specialized Content Safety & Moderation Engine
+ * Fast, lightweight classifier trained specifically for policy-breaking material,
+ * minor protection, hate, violence, and spam without burning heavy LLM tokens.
+ */
+async function runShieldstral(env, state, questions, timeoutMs) {
+  const token = env.SHIELDSTRAL_API_KEY || env.MISTRAL_API_KEY;
+  const endpoint = env.SHIELDSTRAL_ENDPOINT || 'https://api.mistral.ai/v1/moderations';
+  if (!token && !env.SHIELDSTRAL_ENDPOINT) return null;
+
+  // Flatten state into text for content classification
+  const text = typeof state === 'string'
+    ? state
+    : Object.values(state || {}).filter(Boolean).join('\n');
+  if (!text.trim()) return null;
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'shieldstral-latest',
+      input: text,
+    }),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data?.results?.[0]) {
+    throw new Error(`Shieldstral HTTP ${res.status}: ${JSON.stringify(data)}`.slice(0, 200));
+  }
+
+  const result = data.results[0];
+  const categories = result.categories || {};
+  const scores = result.category_scores || {};
+
+  // Map Shieldstral safety categories into structured decision answers
+  const answers = {};
+  for (const [key, q] of Object.entries(questions)) {
+    if (key === 'minor_risk' || key.includes('minor')) {
+      const minorScore = scores.sexual_minors ?? scores.sexual_underage ?? (categories.sexual_minors ? 1.0 : 0.0);
+      answers[key] = { noul: typeof minorScore === 'number' ? minorScore : 0.0 };
+    } else if (key === 'verdict') {
+      let v = 'ok';
+      if (categories.spam) v = 'spam';
+      else if (categories.sexual_minors || categories.hate_and_discrimination || categories.violence_and_threats || categories.dangerous_content) {
+        v = 'harmful';
+      }
+      answers[key] = { choice: v };
+    } else if (key === 'spam') {
+      answers[key] = { choice: categories.spam ? 'spam' : 'ok', noul: scores.spam ?? (categories.spam ? 0.95 : 0.05) };
+    } else if (key === 'harmful') {
+      const isHarmful = Boolean(categories.sexual_minors || categories.hate_and_discrimination || categories.violence_and_threats || categories.dangerous_content);
+      answers[key] = { choice: isHarmful ? 'harmful' : 'ok', noul: isHarmful ? 0.95 : 0.05 };
+    }
+  }
+
+  if (Object.keys(answers).length > 0) {
+    return { answers };
+  }
+  return null;
+}
+
+/**
  * Ask the questions about `state`. Returns `{ answers, engine }`, or null when no engine
- * answered. Example: `(await decide(env, text, { spam: noul('Is this spam?') }))?.answers.spam.noul`.
+ * answered. Evaluates specialized engines (Shieldstral for safety) before general LLMs.
  */
 export async function decide(env, state, questions, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
-  for (const [engine, run] of [['clef', runClef], ['jev', runJev]]) {
+  // If questions contain safety/moderation criteria, attempt Shieldstral 1.0 first
+  const isSafetyQuestion = Object.keys(questions).some(k =>
+    k === 'minor_risk' || k === 'verdict' || k === 'spam' || k === 'harmful'
+  );
+
+  const engines = isSafetyQuestion
+    ? [['shieldstral', runShieldstral], ['clef', runClef], ['jev', runJev]]
+    : [['clef', runClef], ['jev', runJev]];
+
+  for (const [engine, run] of engines) {
     try {
       const result = await run(env, state, questions, timeoutMs);
       if (result?.answers) return { answers: result.answers, engine };
