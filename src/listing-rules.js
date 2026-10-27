@@ -112,7 +112,7 @@ export const SITEMAP_STATIC_PAGES = [
   '/blog/hanime-alternatives-2026', '/blog/privacy-safety-guide', '/blog/top-10-sites-may-2026',
   '/category/anime-streaming', '/category/hentai-streaming', '/category/manga-doujin',
   '/category/images-boorus', '/category/games', '/category/communities', '/category/downloads',
-  '/category/visual-novels', '/region-unblocked',
+  '/category/visual-novels', '/region-unblocked', '/alternatives',
   '/about', '/contact', '/privacy', '/terms', '/disclaimer', '/dmca',
 ];
 
