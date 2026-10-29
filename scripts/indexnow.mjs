@@ -78,5 +78,5 @@ async function postIndexNow(body) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   runIndexNow({ d1: d1FromEnv, post: postIndexNow, dryRun: process.argv.includes('--dry-run') })
-    .catch(e => { console.error(`indexnow failed: ${e.message}`); process.exit(1); });
+    .catch(e => { if (/daily row read limit/i.test(e.message)) { console.warn(`indexnow skipped (D1 daily quota reached): ${e.message}`); process.exit(0); } console.error(`indexnow failed: ${e.message}`); process.exit(1); });
 }

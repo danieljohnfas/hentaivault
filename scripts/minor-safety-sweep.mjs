@@ -54,5 +54,5 @@ export async function runSweep({ d1, dryRun = false, log = console.log }) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   runSweep({ d1: d1FromEnv, dryRun: process.argv.includes('--dry-run') })
-    .catch(e => { console.error(`sweep failed: ${e.message}`); process.exit(1); });
+    .catch(e => { if (/daily row read limit/i.test(e.message)) { console.warn(`sweep skipped (D1 daily quota reached): ${e.message}`); process.exit(0); } console.error(`sweep failed: ${e.message}`); process.exit(1); });
 }
