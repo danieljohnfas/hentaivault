@@ -188,6 +188,31 @@ class HeadHandler {
         "reviewBody": desc
       });
     }
+    if (this.indexable) {
+      const domain = hostnameOf(site.url);
+      const upStatus = isSiteUp(site) ? 'online and accessible' : 'experiencing connectivity issues or mirror redirects';
+      graph.push({
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": `Is ${site.name} (${domain}) safe and working in 2026?`,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": `${site.name} (${domain}) is currently ${upStatus} based on HentaiVault's automated uptime checks. It is categorized under ${category}${rating ? ` with a community and editorial rating of ${rating}/5` : ''}.`
+            }
+          },
+          {
+            "@type": "Question",
+            "name": `What are the best ${site.name} alternatives and official mirrors?`,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": `Our ${site.name} directory listing tracks the verified primary domain (${domain}) along with top-rated ${category} alternatives that offer fast streaming, clean reader interfaces, and verified uptime.`
+            }
+          }
+        ]
+      });
+    }
     tags.push(jsonLd({ "@context": "https://schema.org", "@graph": graph }));
     element.append(tags.join('\n'), { html: true });
   }
@@ -873,7 +898,8 @@ async function handleRequest(request, env, ctx) {
     }
 
     if (url.pathname === '/sitemap.xml') {
-      let urls = SITEMAP_STATIC_PAGES.map(p => `  <url>\n    <loc>https://hentaivault.me${p}</loc>\n  </url>\n`).join('');
+      const staticLastMod = '2026-10-29';
+      let urls = SITEMAP_STATIC_PAGES.map(p => `  <url>\n    <loc>https://hentaivault.me${p}</loc>\n    <lastmod>${staticLastMod}</lastmod>\n  </url>\n`).join('');
       if (env.hv_directory) {
         try {
           const rows = await env.hv_directory.prepare(
@@ -1681,7 +1707,7 @@ async function handleRequest(request, env, ctx) {
 
       const canonicalUrl = `https://hentaivault.me/site?id=${encodeURIComponent(site.id)}`;
       const indexable = isIndexable(site);
-      const pageTitle = `${site.name} Review, Mirror Status & Alternatives (2026) | HentaiVault`;
+      const pageTitle = `${site.name} — ${isSiteUp(site) ? 'Live Status: Online' : 'Mirror & Status'}, Official Link & Alternatives (2026) | HentaiVault`;
       const rewriter = new HTMLRewriter()
         .on('link[rel="canonical"]', new CanonicalRemover())
         .on('meta[name="description"]', new CanonicalRemover())
