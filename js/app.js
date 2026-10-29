@@ -486,28 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // B. PureVPN and pCloud Outbound Affiliate Conversion Monitoring
-        const affLink = e.target.closest('a[data-affiliate-partner], a[href*="billing.purevpn.com"], a[href*="partner.pcloud.com"]');
-        if (affLink) {
-            const href = affLink.href || '';
-            const partner = affLink.dataset.affiliatePartner || (/purevpn/i.test(href) ? 'purevpn' : /pcloud/i.test(href) ? 'pcloud' : 'partner');
-            const slot = affLink.dataset.affiliateSlot || (affLink.closest('header, nav') ? 'navbar' : affLink.closest('#topShowcase, .banner') ? 'banner' : 'inline');
-            const payload = JSON.stringify({ partner, slot, url: href, page: location.pathname });
-
-            if (navigator.sendBeacon) {
-                navigator.sendBeacon('/api/affiliate-click', new Blob([payload], { type: 'text/plain;charset=UTF-8' }));
-            } else {
-                fetch('/api/affiliate-click', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
-            }
-
-            try {
-                let stats = JSON.parse(localStorage.getItem('hv_aff_stats') || '{}');
-                stats[partner] = (stats[partner] || 0) + 1;
-                stats[partner + '_' + slot] = (stats[partner + '_' + slot] || 0) + 1;
-                stats.last_click = { partner, slot, time: new Date().toISOString() };
-                localStorage.setItem('hv_aff_stats', JSON.stringify(stats));
-            } catch (_) {}
-        }
+        // Outbound affiliate tracking removed - HentaiVault is 100% ad-free & supported via Buy Me a Coffee
     });
 
     // --- For You Shelf (Endowed Progress / Personalisation) ---
@@ -884,11 +863,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderSites(fetchedSites, append, data.total);
             } else {
                 console.error('[HV] Unexpected API shape:', data);
-                siteGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">Unable to load sites (bad response shape). <a href="javascript:location.reload()" style="color:var(--primary)">Retry</a></div>`;
+                console.warn('[HV] Bad API response shape, falling back to static bundle');
+                currentSites = FALLBACK_TOP_SITES;
+                hasMoreSites = false;
+                renderSites(FALLBACK_TOP_SITES, false, FALLBACK_TOP_SITES.length);
             }
         } catch (e) {
             console.error('API Fetch Failed', e);
-            siteGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--primary);">Failed to load sites: ${e.message}. <a href="javascript:location.reload()" style="color:var(--primary)">Retry</a></div>`;
+            console.warn('[HV] API fetch failed, falling back to static curated bundle:', e.message);
+            // Seamless static fallback so search crawlers and users NEVER see a raw 500 error!
+            currentSites = FALLBACK_TOP_SITES;
+            hasMoreSites = false;
+            renderSites(FALLBACK_TOP_SITES, false, FALLBACK_TOP_SITES.length);
         } finally {
             isLoading = false;
             if (loadingBar) loadingBar.classList.remove('loading');
@@ -966,7 +952,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // No animation delay — prevents cards sitting at opacity:0
             // Tracking & Linkbacks
             const trackedUrl = (() => {
-                if (site.affiliate_url) return site.affiliate_url;
+                // Direct clean URL - no affiliate parameters
+                if (site.url) return site.url;
                 try {
                     const u = new URL(site.url);
                     u.searchParams.set('utm_source', 'hentaivault.me');
